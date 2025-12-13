@@ -215,6 +215,232 @@ class DataFallbackSystem:
 
         return df
 
+    def get_simulated_local_data(self,
+                                stock_list: List[str],
+                                field_list: List[str],
+                                period: str = '1d',
+                                count: int = -1,
+                                start_time: str = '',
+                                end_time: str = '') -> Dict[str, Any]:
+        """
+        生成模拟历史数据用于本地数据回退
+
+        Args:
+            stock_list: 股票代码列表
+            field_list: 字段列表
+            period: 数据周期
+            count: 数据条数
+            start_time: 开始时间
+            end_time: 结束时间
+
+        Returns:
+            模拟历史数据字典
+        """
+        if not self.fallback_active:
+            self.fallback_active = True
+            self.logger.warning("本地数据回退系统激活，使用模拟历史数据")
+
+        result = {}
+
+        for symbol in stock_list:
+            etf_code = symbol.replace('.SZ', '').replace('.SH', '')
+
+            # 确定数据点数量
+            data_count = self._calculate_data_count(count, start_time, end_time, period)
+
+            # 生成历史数据
+            historical_data = self._generate_historical_data(
+                symbol, etf_code, field_list, period, data_count, start_time, end_time
+            )
+
+            result[symbol] = historical_data
+
+        return result
+
+    def _calculate_data_count(self, count: int, start_time: str, end_time: str, period: str) -> int:
+        """计算合适的数据点数量"""
+        if count > 0:
+            return count
+
+        # 对于count=-1，根据日期范围估算
+        if start_time and end_time:
+            trading_days = self._calculate_trading_days(start_time, end_time)
+            if period == '1d':
+                return trading_days
+            elif period == '1w':
+                return trading_days // 7
+            elif period == '1m':
+                return trading_days // 30
+            elif period == '1h':
+                return trading_days * 4  # 每天4小时
+
+        # 默认回退值
+        return 252  # 约1年的交易日
+
+    def _calculate_trading_days(self, start_time: str, end_time: str) -> int:
+        """计算交易日数量"""
+        try:
+            from datetime import datetime, timedelta
+            import numpy as np
+
+            # 尝试不同的日期格式
+            for date_format in ['%Y%m%d', '%Y-%m-%d', '%Y%m%d%H%M%S']:
+                try:
+                    start_dt = datetime.strptime(start_time, date_format)
+                    end_dt = datetime.strptime(end_time, date_format)
+                    break
+                except ValueError:
+                    continue
+            else:
+                # 如果都失败，使用默认值
+                return 252
+
+            total_days = (end_dt - start_dt).days
+            # 排除周末，约70%是交易日
+            trading_days = int(total_days * 0.7)
+            # 再排除节假日，约95%
+            trading_days = int(trading_days * 0.95)
+
+            return max(1, trading_days)
+
+        except Exception:
+            return 252
+
+    def _generate_historical_data(self,
+                                symbol: str,
+                                etf_code: str,
+                                field_list: List[str],
+                                period: str,
+                                count: int,
+                                start_time: str,
+                                end_time: str) -> pd.DataFrame:
+        """生成历史数据"""
+        # 获取ETF基础配置
+        if etf_code not in self.etf_base_prices:
+            base_price = 1.0
+            volatility = 0.02
+            self.logger.warning(f"ETF {etf_code} 无配置，使用默认参数")
+        else:
+            config = self.etf_base_prices[etf_code]
+            base_price = config['base_price']
+            volatility = self.volatility_profiles.get(etf_code, 0.02)
+
+        # 设置随机种子以确保一致性
+        np.random.seed(hash(symbol) % 2**32)
+
+        # 生成日期序列
+        dates = self._generate_date_series(count, period, start_time, end_time)
+
+        # 生成价格数据
+        current_price = base_price
+        data = []
+
+        for date in dates:
+            # 生成每日价格变动
+            if period in ['1d', '1w', '1m']:
+                daily_return = np.random.normal(0, volatility)
+            else:  # 小时级别
+                daily_return = np.random.normal(0, volatility * 0.1)
+
+            # 生成OHLC数据
+            open_price = current_price * (1 + np.random.normal(0, volatility * 0.3))
+            close_price = current_price * (1 + daily_return)
+
+            # 确保价格逻辑关系
+            high_price = max(open_price, close_price) * (1 + abs(np.random.normal(0, volatility * 0.2)))
+            low_price = min(open_price, close_price) * (1 - abs(np.random.normal(0, volatility * 0.2)))
+
+            # 生成成交量
+            base_volume = np.random.normal(1000000, 200000)
+            volume = max(int(base_volume), 100000)
+            amount = volume * close_price
+
+            day_data = {
+                'date': date,
+                'open': round(open_price, 3),
+                'high': round(high_price, 3),
+                'low': round(low_price, 3),
+                'close': round(close_price, 3),
+                'volume': volume,
+                'amount': round(amount, 2)
+            }
+
+            # 只保留请求的字段
+            filtered_data = {k: v for k, v in day_data.items() if k in field_list or k == 'date'}
+            data.append(filtered_data)
+
+            # 更新当前价格
+            current_price = close_price
+
+        df = pd.DataFrame(data)
+
+        # 设置日期索引
+        if 'date' in df.columns:
+            df.set_index('date', inplace=True)
+
+        return df
+
+    def _generate_date_series(self, count: int, period: str, start_time: str, end_time: str) -> List:
+        """生成日期序列"""
+        from datetime import datetime, timedelta
+        import pandas as pd
+
+        try:
+            # 如果有指定的时间范围，优先使用
+            if start_time and end_time:
+                for date_format in ['%Y%m%d', '%Y-%m-%d']:
+                    try:
+                        start_dt = datetime.strptime(start_time, date_format)
+                        end_dt = datetime.strptime(end_time, date_format)
+                        break
+                    except ValueError:
+                        continue
+
+                # 根据周期生成日期
+                if period == '1d':
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='B')  # 工作日
+                elif period == '1w':
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='W')
+                elif period == '1m':
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='M')
+                elif period == '1h':
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='H')
+                else:
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='D')
+
+                # 限制数量
+                if len(dates) > count and count > 0:
+                    dates = dates[-count:]
+                elif count > 0:
+                    dates = dates[:count]
+
+                return dates.tolist()
+
+            else:
+                # 如果没有时间范围，从当前日期往前推
+                end_dt = datetime.now()
+                if period == '1d':
+                    start_dt = end_dt - timedelta(days=count)
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='B')
+                elif period == '1w':
+                    start_dt = end_dt - timedelta(weeks=count)
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='W')
+                elif period == '1m':
+                    start_dt = end_dt - timedelta(days=count * 30)
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='M')
+                else:
+                    start_dt = end_dt - timedelta(days=count)
+                    dates = pd.date_range(start=start_dt, end=end_dt, freq='D')
+
+                return dates.tolist()
+
+        except Exception as e:
+            self.logger.warning(f"生成日期序列失败: {e}")
+            # 回退到简单的时间序列
+            end_dt = datetime.now()
+            dates = [end_dt - timedelta(days=i) for i in range(count)]
+            return dates[::-1]  # 反转使其按时间顺序
+
     def get_simulated_price(self, symbol: str) -> float:
         """获取单个ETF的模拟价格"""
         etf_code = symbol.replace('.SZ', '').replace('.SH', '')

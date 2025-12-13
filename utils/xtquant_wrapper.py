@@ -241,6 +241,158 @@ class XtQuantAPIWrapper:
         self._initialize_xtquant()
         return self.is_connected
 
+    def get_local_data(self,
+                       stock_list: List[str],
+                       field_list: Optional[List[str]] = None,
+                       period: str = '1d',
+                       start_time: str = '',
+                       end_time: str = '',
+                       count: int = -1,
+                       dividend_type: str = 'none',
+                       **kwargs) -> Dict[str, Any]:
+        """
+        获取本地历史数据，支持自动回退
+
+        Args:
+            stock_list: 股票代码列表
+            field_list: 字段列表，如['open', 'high', 'low', 'close', 'volume']
+            period: 数据周期
+            start_time: 开始时间
+            end_time: 结束时间
+            count: 数据条数
+            dividend_type: 复权类型
+            **kwargs: 其他参数
+
+        Returns:
+            历史数据字典
+        """
+        # 输入验证和标准化
+        if not stock_list:
+            self.logger.warning("get_local_data: 未提供stock_list参数")
+            return {}
+
+        if field_list is None:
+            field_list = ['open', 'high', 'low', 'close', 'volume']
+
+        # 检查熔断器状态
+        if self._is_circuit_breaker_active():
+            self.logger.info("熔断器激活，使用本地数据回退系统")
+            return self._get_local_fallback_data(stock_list, field_list, period, count, start_time, end_time)
+
+        # 如果XtQuant不可用，直接使用回退数据
+        if not self.xtdata or not self.is_connected:
+            return self._get_local_fallback_data(stock_list, field_list, period, count, start_time, end_time)
+
+        # 尝试使用XtQuant获取数据
+        try:
+            # 尝试不同的参数组合
+            result = self._try_xtquant_local_calls(stock_list, field_list, period, start_time, end_time, count, dividend_type)
+
+            if result is not None:
+                self.connection_attempts = 0  # 重置失败计数
+                return result
+            else:
+                raise Exception("XtQuant get_local_data返回None")
+
+        except Exception as e:
+            self.logger.warning(f"XtQuant get_local_data失败: {e}")
+            self._handle_failure()
+            return self._get_local_fallback_data(stock_list, field_list, period, count, start_time, end_time)
+
+    def _try_xtquant_local_calls(self,
+                                stock_list: List[str],
+                                field_list: List[str],
+                                period: str,
+                                start_time: str,
+                                end_time: str,
+                                count: int,
+                                dividend_type: str) -> Optional[Dict[str, Any]]:
+        """尝试不同的XtQuant get_local_data调用方式"""
+
+        attempts = [
+            # 尝试1: 完整参数（原代码中的用法）
+            {
+                'params': {
+                    'field_list': field_list,
+                    'stock_list': stock_list,
+                    'period': period,
+                    'start_time': start_time,
+                    'end_time': end_time,
+                    'count': count,
+                    'dividend_type': dividend_type,
+                    'fill_data': True
+                },
+                'description': '完整参数集'
+            },
+
+            # 尝试2: 最小参数集
+            {
+                'params': {
+                    'field_list': field_list,
+                    'stock_list': stock_list,
+                    'period': period,
+                    'count': count
+                },
+                'description': '最小参数集'
+            },
+
+            # 尝试3: 带data_dir参数（如果支持的话）
+            {
+                'params': {
+                    'field_list': field_list,
+                    'stock_list': stock_list,
+                    'period': period,
+                    'count': count,
+                    'data_dir': self.data_dir
+                },
+                'description': '带data_dir参数'
+            },
+
+            # 尝试4: 不同的参数顺序
+            {
+                'params': {
+                    'stock_list': stock_list,
+                    'field_list': field_list,
+                    'period': period,
+                    'count': count,
+                    'dividend_type': dividend_type
+                },
+                'description': '不同参数顺序'
+            }
+        ]
+
+        for attempt in attempts:
+            try:
+                self.logger.debug(f"尝试XtQuant get_local_data调用: {attempt['description']}")
+                result = self.xtdata.get_local_data(**attempt['params'])
+
+                if result is not None:
+                    self.logger.debug(f"XtQuant get_local_data调用成功: {attempt['description']}")
+                    return result
+
+            except Exception as e:
+                self.logger.debug(f"XtQuant get_local_data调用失败 ({attempt['description']}): {e}")
+                continue
+
+        return None
+
+    def _get_local_fallback_data(self,
+                                stock_list: List[str],
+                                field_list: List[str],
+                                period: str,
+                                count: int,
+                                start_time: str,
+                                end_time: str) -> Dict[str, Any]:
+        """获取本地数据的回退数据"""
+        return fallback_system.get_simulated_local_data(
+            stock_list=stock_list,
+            field_list=field_list,
+            period=period,
+            count=count,
+            start_time=start_time,
+            end_time=end_time
+        )
+
     def get_single_price(self, symbol: str) -> float:
         """获取单个ETF的最新价格"""
         # 检查熔断器

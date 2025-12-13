@@ -121,7 +121,6 @@ class XtQuantClient:
             self.logger.error(f"连接检查失败: {str(e)}")
             return False
 
-    @retry_on_failure(max_attempts=3, delay=1.0)
     def get_local_data(self,
                       stock_list: List[str],
                       field_list: List[str] = None,
@@ -131,7 +130,7 @@ class XtQuantClient:
                       count: int = -1,
                       dividend_type: str = 'none') -> Dict[str, Any]:
         """
-        从本地缓存获取历史数据
+        获取本地历史数据，使用robust wrapper自动回退
 
         Args:
             stock_list: 股票代码列表
@@ -143,33 +142,32 @@ class XtQuantClient:
             dividend_type: 复权类型
 
         Returns:
-            数据字典
+            数据字典，包含自动回退数据
         """
-        if not self.is_connected:
-            raise XtQuantConnectionError("未连接到XtQuant系统")
-
-        if field_list is None:
-            field_list = ['open', 'high', 'low', 'close', 'volume']
-
         self.logger.debug(f"获取本地数据: {stock_list}, 字段: {field_list}, 周期: {period}")
 
         try:
-            data = xtdata.get_local_data(
-                field_list=field_list,
+            # 使用robust wrapper而不是直接调用xtdata
+            data = self.api_wrapper.get_local_data(
                 stock_list=stock_list,
+                field_list=field_list,
                 period=period,
                 start_time=start_time,
                 end_time=end_time,
                 count=count,
                 dividend_type=dividend_type,
-                fill_data=True,
                 data_dir=self.data_dir
             )
 
             if data is None or len(data) == 0:
-                raise XtQuantDataError(f"未找到数据: {stock_list}")
+                self.logger.warning(f"未找到本地数据: {stock_list}")
+                return {}
 
-            self.logger.debug(f"成功获取数据，共 {len(data)} 个字段")
+            # 记录是否使用了回退系统
+            connection_status = self.api_wrapper.get_connection_status()
+            if connection_status['fallback_system']:
+                self.logger.info(f"使用回退数据获取本地数据: {stock_list}")
+
             return data
 
         except Exception as e:
