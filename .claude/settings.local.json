@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git init:*)",
+      "WebSearch",
+      "Bash(timeout 30 python main.py)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
