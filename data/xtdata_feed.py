@@ -1,0 +1,224 @@
+# encoding:utf-8
+"""
+XtQuant数据接口模块
+封装xtdata模块，提供统一的数据获取接口
+"""
+import pandas as pd
+from typing import List, Optional
+from xtquant import xtdata
+from .data_cache import DataCache
+
+
+class XtDataFeed:
+    """
+    XtQuant数据源封装
+    提供市场数据获取功能，支持缓存
+    """
+
+    def __init__(self, use_cache: bool = True, cache_dir: str = None, cache_expire_days: int = 7):
+        """
+        初始化XtQuant数据源
+
+        参数:
+            use_cache: 是否使用缓存
+            cache_dir: 缓存目录
+            cache_expire_days: 缓存过期天数
+        """
+        self.use_cache = use_cache
+        if self.use_cache:
+            self.cache = DataCache(cache_dir=cache_dir, cache_expire_days=cache_expire_days)
+        else:
+            self.cache = None
+
+    def get_market_data(self, field_list: List[str], stock_list: List[str],
+                       period: str = '1d', count: int = 1, start_time: str = '',
+                       end_time: str = '', dividend_type: str = 'follow',
+                       fill_data: bool = True) -> dict:
+        """
+        获取市场数据（实时或历史）
+
+        参数:
+            field_list: 字段列表，如 ['open', 'high', 'low', 'close', 'volume']
+            stock_list: 股票代码列表，如 ['000001.SZ', '600000.SH']
+            period: 周期，如 '1d', '1w', '1m', '1tick', '1min'
+            count: 数据条数，-1表示全部
+            start_time: 开始时间 (YYYYMMDD或YYYYMMDD HHMMSS格式)
+            end_time: 结束时间 (YYYYMMDD或YYYYMMDD HHMMSS格式)
+            dividend_type: 除权类型，'none'/'front'/'follow'/'back'/'front_follow'
+            fill_data: 是否填充数据
+
+        返回:
+            dict: {stock_code: DataFrame}
+        """
+        try:
+            data = xtdata.get_market_data_ex(
+                field_list=field_list,
+                stock_list=stock_list,
+                period=period,
+                count=count,
+                start_time=start_time,
+                end_time=end_time,
+                dividend_type=dividend_type,
+                fill_data=fill_data
+            )
+            return data
+
+        except Exception as e:
+            print(f"获取市场数据失败: {e}")
+            return {}
+
+    def download_history_data(self, stock_code: str, period: str,
+                             start_time: str, end_time: str = '') -> bool:
+        """
+        下载历史数据到本地
+
+        参数:
+            stock_code: 股票代码
+            period: 周期 ('tick', '1d', '1w', '1m')
+            start_time: 开始时间 (YYYYMMDD或YYYYMMDD HHMMSS格式)
+            end_time: 结束时间 (可选)
+
+        返回:
+            bool: 是否成功
+        """
+        try:
+            xtdata.download_history_data(stock_code, period, start_time, end_time)
+            print(f"下载历史数据成功: {stock_code} ({start_time} - {end_time})")
+            return True
+
+        except Exception as e:
+            print(f"下载历史数据失败: {e}")
+            return False
+
+    def get_history_data(self, stock_code: str, field_list: List[str],
+                        start_date: str, end_date: str, period: str = '1d',
+                        use_cache: bool = None) -> Optional[pd.DataFrame]:
+        """
+        获取历史数据（带缓存支持）
+
+        参数:
+            stock_code: 股票代码
+            field_list: 字段列表
+            start_date: 开始日期 (YYYYMMDD)
+            end_date: 结束日期 (YYYYMMDD)
+            period: 周期
+            use_cache: 是否使用缓存，默认使用初始化时的设置
+
+        返回:
+            DataFrame: 历史数据，如果失败返回None
+        """
+        # 决定是否使用缓存
+        should_use_cache = use_cache if use_cache is not None else self.use_cache
+
+        # 尝试从缓存获取
+        if should_use_cache and self.cache:
+            data, from_cache = self.cache.get_cached_data(stock_code, start_date, end_date, period)
+            if data is not None:
+                return data
+
+        # 下载历史数据
+        success = self.download_history_data(stock_code, period, start_date, end_date)
+        if not success:
+            return None
+
+        # 获取数据
+        try:
+            data_dict = xtdata.get_market_data_ex(
+                field_list=field_list,
+                stock_list=[stock_code],
+                period=period,
+                start_time=start_date,
+                end_time=end_date,
+                dividend_type='follow',
+                fill_data=True
+            )
+
+            if stock_code not in data_dict or data_dict[stock_code] is None:
+                print(f"获取数据失败: {stock_code}")
+                return None
+
+            data = data_dict[stock_code]
+
+            # 保存到缓存
+            if should_use_cache and self.cache:
+                self.cache.save_to_cache(stock_code, data, start_date, end_date, period)
+
+            return data
+
+        except Exception as e:
+            print(f"获取历史数据失败: {e}")
+            return None
+
+    def get_instrument_info(self, stock_code: str) -> dict:
+        """
+        获取合约信息
+
+        参数:
+            stock_code: 股票代码
+
+        返回:
+            dict: 合约信息
+        """
+        try:
+            info = xtdata.get_instrument_info(stock_code)
+            return info
+
+        except Exception as e:
+            print(f"获取合约信息失败: {e}")
+            return {}
+
+    def get_trading_dates(self, start_date: str, end_date: str, market: str = 'SH') -> List[str]:
+        """
+        获取交易日历
+
+        参数:
+            start_date: 开始日期 (YYYYMMDD)
+            end_date: 结束日期 (YYYYMMDD)
+            market: 市场 ('SH', 'SZ')
+
+        返回:
+            list: 交易日期列表
+        """
+        try:
+            dates = xtdata.get_trading_dates(start_date, end_date, market)
+            return dates
+
+        except Exception as e:
+            print(f"获取交易日历失败: {e}")
+            return []
+
+    def connect(self) -> bool:
+        """
+        连接MiniQMT数据服务
+
+        返回:
+            bool: 是否连接成功
+        """
+        try:
+            # xtdata会自动连接，这里只是测试连接
+            result = xtdata.get_full_tick(['000001.SZ'])
+            return result is not None
+
+        except Exception as e:
+            print(f"连接MiniQMT数据服务失败: {e}")
+            return False
+
+    @staticmethod
+    def format_date(date_str: str, input_format: str = '%Y%m%d', output_format: str = '%Y-%m-%d') -> str:
+        """
+        格式化日期字符串
+
+        参数:
+            date_str: 日期字符串
+            input_format: 输入格式
+            output_format: 输出格式
+
+        返回:
+            str: 格式化后的日期字符串
+        """
+        try:
+            from datetime import datetime
+            dt = datetime.strptime(date_str, input_format)
+            return dt.strftime(output_format)
+        except:
+            return date_str

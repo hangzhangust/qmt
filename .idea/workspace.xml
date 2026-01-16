@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="11cb70d6-b091-4117-a066-d29257bf105a" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/QMT_API_Documentation_Format.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backtesting/all_weather_bt_strategy.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backtesting/backtrader_engine.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/data_cache.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/xtdata_feed.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/run_backtest.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/strategies/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/strategies/all_weather_strategy.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/strategies/base_strategy.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/config_loader.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/state_manager.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/全天候策略.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/qmt.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/qmt.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Table.xls" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtest/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtest/backtest_engine.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_112510.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_120030.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_120212.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_120424.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_121712.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/etf_universe.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/risk_params.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/settings.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/data_manager.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/market_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/xtquant_client.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/execution/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/execution/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/execution/order_executor.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/final_test.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/risk/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/risk/risk_manager.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/strategy/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/strategy/grid_engine.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/strategy/signal_generator.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_fixed_client.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_get_local_data_fix.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_simple_local_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/test_xtquant_api.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/data_fallback.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/helpers.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/logger.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/xtquant_wrapper.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/新建 文本文档.txt" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/__init__.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="38IbPdO3lzQavKwZHMzm8mMtPu1" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "master"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\zhanghang\OneDrive\Python\qmt" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-164cda30dcd9-0af03a5fa574-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.26830.99" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="11cb70d6-b091-4117-a066-d29257bf105a" name="Changes" comment="" />
+      <created>1768490010197</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1768490010197</updated>
+    </task>
+    <servers />
+  </component>
+</project>
