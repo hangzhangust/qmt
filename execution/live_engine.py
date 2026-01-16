@@ -39,8 +39,7 @@ class LiveTradingEngine:
         self.order_manager = OrderManager(trader)
 
         # 创建状态管理器
-        state_dir = config.get('state_dir', None)
-        self.state_manager = StateManager(state_dir=state_dir)
+        self.state_manager = StateManager()
 
         # 策略状态
         self.is_running = False

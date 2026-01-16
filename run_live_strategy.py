@@ -194,7 +194,7 @@ def main():
     )
 
     if args.dry_run or args.mode == 'test':
-        print("   ⚠ 测试模式: 不会实际下单")
+        print("   [WARNING] Test mode: No actual orders will be placed")
     else:
         print(f"   连接账户: {config['xtquant_account_id']}")
 
@@ -218,14 +218,14 @@ def main():
     print("\n6. 初始化引擎...")
 
     if args.dry_run or args.mode == 'test':
-        print("   ⚠ 测试模式: 跳过实际连接")
-        print("   ✓ 引擎初始化完成（模拟模式）")
+        print("   [WARNING] Test mode: Skipping actual connection")
+        print("   [OK] Engine initialized (test mode)")
         return 0
     else:
         if not engine.initialize():
-            print("\n✗ 引擎初始化失败")
+            print("\n[X] Engine initialization failed")
             return 1
-        print("   ✓ 引擎初始化完成")
+        print("   [OK] Engine initialized")
 
     # 7. 运行策略
     print("\n" + "=" * 80)
@@ -238,10 +238,10 @@ def main():
             print("执行模式: 单次执行\n")
             success = engine.run_once()
             if success:
-                print("\n✓ 策略执行成功")
+                print("\n[OK] Strategy execution succeeded")
                 return 0
             else:
-                print("\n✗ 策略执行失败")
+                print("\n[X] Strategy execution failed")
                 return 1
         else:
             # 持续运行
@@ -250,7 +250,7 @@ def main():
             return 0
 
     except Exception as e:
-        print(f"\n✗ 策略运行异常: {e}")
+        print(f"\n[X] Strategy runtime error: {e}")
         import traceback
         traceback.print_exc()
         return 1
