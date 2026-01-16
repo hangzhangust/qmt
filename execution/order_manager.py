@@ -1,7 +1,7 @@
-# encoding:gbk
+# -*- coding: utf-8 -*-
 """
-订单管理器模块
-封装下单逻辑，管理订单生命周期
+Order Manager Module
+Order lifecycle management and order placement logic
 """
 import time
 from typing import Dict, List, Optional

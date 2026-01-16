@@ -1,7 +1,7 @@
-# encoding:gbk
+# -*- coding: utf-8 -*-
 """
-全天候策略实盘执行脚本
-程序入口，负责初始化并运行实盘策略
+All-Weather Strategy Live Trading Script
+Program entry point, responsible for initializing and running live strategy
 """
 import argparse
 import sys

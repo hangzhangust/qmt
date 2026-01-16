@@ -6,7 +6,8 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []

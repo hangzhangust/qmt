@@ -5,60 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="11cb70d6-b091-4117-a066-d29257bf105a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/QMT_API_Documentation_Format.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backtesting/all_weather_bt_strategy.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backtesting/backtrader_engine.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/data_cache.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data/xtdata_feed.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/run_backtest.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/strategies/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/strategies/all_weather_strategy.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/strategies/base_strategy.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/config_loader.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/state_manager.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/全天候策略.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.claude/settings.local.json" beforeDir="false" afterPath="$PROJECT_DIR$/.claude/settings.local.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/qmt.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/qmt.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CLAUDE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Table.xls" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtest/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtest/backtest_engine.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_112510.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_120030.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_120212.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_120424.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtest_report_20251213_121712.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/etf_universe.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/risk_params.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/settings.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/data/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/data_manager.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/market_data.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/xtquant_client.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/execution/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/execution/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/execution/order_executor.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/final_test.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/risk/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/risk/risk_manager.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/strategy/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/strategy/grid_engine.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/strategy/signal_generator.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_fixed_client.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_get_local_data_fix.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_simple_local_data.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_xtquant_api.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/data_fallback.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/helpers.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/logger.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/xtquant_wrapper.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/新建 文本文档.txt" beforeDir="false" afterPath="$PROJECT_DIR$/backtesting/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -98,6 +46,35 @@
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\zhanghang\OneDrive\Python\qmt" />
     </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="run_backtest" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="qmt" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/run_backtest.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.run_backtest" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>

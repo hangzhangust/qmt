@@ -1,7 +1,7 @@
-# encoding:gbk
+# -*- coding: utf-8 -*-
 """
-miniQMT交易接口封装模块
-封装xtquant.xttrader API，提供统一的交易接口
+miniQMT Trading Interface Wrapper Module
+Encapsulates xtquant.xttrader API to provide unified trading interface
 """
 import time
 from typing import Dict, List, Optional, Tuple

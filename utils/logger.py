@@ -1,7 +1,7 @@
-# encoding:gbk
+# -*- coding: utf-8 -*-
 """
-日志系统模块
-提供统一的日志管理功能
+Logger Module
+Unified logging management system
 """
 import logging
 import os

@@ -1,7 +1,7 @@
-# encoding:gbk
+# -*- coding: utf-8 -*-
 """
-实盘交易引擎模块
-整合策略逻辑、交易接口、数据接口，实现策略主循环
+Live Trading Engine Module
+Integrates strategy logic, trading interface, and data interface
 """
 import datetime
 import time
