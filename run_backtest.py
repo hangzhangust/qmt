@@ -29,6 +29,11 @@ def main():
     parser.add_argument('--commission', type=float, default=0.0001, help='手续费率 (默认0.0001)')
     parser.add_argument('--no_cache', action='store_true', help='禁用数据缓存')
 
+    # 可视化参数
+    parser.add_argument('--plot', action='store_true', help='显示可视化图表')
+    parser.add_argument('--save_plot', type=str, default=None, help='保存图表路径 (如: results.png)')
+    parser.add_argument('--show_metrics', action='store_true', help='显示增强性能指标')
+
     args = parser.parse_args()
 
     print("=" * 80)
@@ -104,8 +109,30 @@ def main():
             print("\n8. 回测结果:")
             engine.print_results(strategy)
 
+            # 显示增强性能指标
+            if args.show_metrics:
+                print("\n9. 增强性能指标:")
+                enhanced_metrics = engine.calculate_enhanced_metrics(strategy)
+                print(f"   总收益率: {enhanced_metrics['total_return']*100:.2f}%")
+                print(f"   年化收益率: {enhanced_metrics['avg_annual_return']*100:.2f}%")
+                print(f"   夏普比率: {enhanced_metrics['sharpe_ratio']:.4f}")
+                print(f"   Sortino比率: {enhanced_metrics['sortino_ratio']:.4f}")
+                print(f"   最大回撤: {enhanced_metrics['max_drawdown']:.2f}%")
+                print(f"   波动率: {enhanced_metrics['volatility']:.2f}%")
+                print(f"   总交易次数: {enhanced_metrics['total_trades']}")
+                print(f"   盈利次数: {enhanced_metrics['won_trades']}")
+                print(f"   亏损次数: {enhanced_metrics['lost_trades']}")
+                print(f"   胜率: {enhanced_metrics['win_rate']*100:.2f}%")
+
+            # 可视化图表
+            if args.plot or args.save_plot:
+                print("\n10. 生成可视化图表...")
+                # 确定是否显示图表
+                show_plot = args.plot
+                engine.plot_results(strategy, save_path=args.save_plot, show=show_plot)
+
             # 保存结果到文件
-            save_results_to_file(strategy, args, config)
+            save_results_to_file(strategy, args, config, enhanced_metrics if args.show_metrics else None)
 
         else:
             print("回测失败：没有策略实例")
@@ -120,7 +147,7 @@ def main():
     return 0
 
 
-def save_results_to_file(strategy, args, config):
+def save_results_to_file(strategy, args, config, enhanced_metrics=None):
     """
     保存回测结果到文件
 
@@ -128,6 +155,7 @@ def save_results_to_file(strategy, args, config):
         strategy: 策略实例
         args: 命令行参数
         config: 配置字典
+        enhanced_metrics: 增强性能指标（可选）
     """
     try:
         import datetime
@@ -141,6 +169,7 @@ def save_results_to_file(strategy, args, config):
 
         with open(result_file, 'w', encoding='utf-8') as f:
             f.write("=" * 80 + "\n")
+            f.write("All-Weather Strategy Backtest Report\n")
             f.write("全天候策略回测报告\n")
             f.write("=" * 80 + "\n\n")
 
@@ -150,7 +179,25 @@ def save_results_to_file(strategy, args, config):
             f.write(f"最终资金: {results:,.2f}\n")
             f.write(f"总收益率: {(results - args.cash) / args.cash * 100:.2f}%\n")
             f.write(f"仓位比例: {config['all_weather_position_ratio']*100:.1f}%\n")
-            f.write(f"再平衡周期: {config['rebalance_period']}天\n\n")
+            f.write(f"再平衡周期: {config['rebalance_period']}天\n")
+
+            # 如果有增强指标，写入文件
+            if enhanced_metrics:
+                f.write("\n" + "-" * 80 + "\n")
+                f.write("增强性能指标 / Enhanced Performance Metrics\n")
+                f.write("-" * 80 + "\n")
+                f.write(f"年化收益率: {enhanced_metrics['avg_annual_return']*100:.2f}%\n")
+                f.write(f"夏普比率: {enhanced_metrics['sharpe_ratio']:.4f}\n")
+                f.write(f"Sortino比率: {enhanced_metrics['sortino_ratio']:.4f}\n")
+                f.write(f"最大回撤: {enhanced_metrics['max_drawdown']:.2f}%\n")
+                f.write(f"最大回撤持续天数: {enhanced_metrics['max_drawdown_len']}天\n")
+                f.write(f"波动率: {enhanced_metrics['volatility']:.2f}%\n")
+                f.write(f"总交易次数: {enhanced_metrics['total_trades']}\n")
+                f.write(f"盈利次数: {enhanced_metrics['won_trades']}\n")
+                f.write(f"亏损次数: {enhanced_metrics['lost_trades']}\n")
+                f.write(f"胜率: {enhanced_metrics['win_rate']*100:.2f}%\n")
+
+            f.write("\n" + "=" * 80 + "\n")
 
         print(f"结果已保存到: {result_file}")
 
