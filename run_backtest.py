@@ -50,8 +50,10 @@ def main():
     try:
         from xtquant import xtdata
         connect_result = xtdata.connect()
-        if connect_result != 0:
-            print(f"[X] XtQuant connection failed, error code / XtQuant连接失败，错误码: {connect_result}")
+        # Newer versions of xtquant return a client object when connected successfully
+        # Use is_connected() method to verify the connection
+        if connect_result is None or not hasattr(connect_result, 'is_connected') or not connect_result.is_connected():
+            print(f"[X] XtQuant connection failed, result / XtQuant连接失败，结果: {connect_result}")
             print("Please check if XtQuant is running / 请检查XtQuant是否正常运行")
             return 1
         print("[OK] XtQuant connection successful / XtQuant连接成功")
