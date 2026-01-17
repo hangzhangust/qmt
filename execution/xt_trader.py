@@ -10,6 +10,40 @@ from xtquant.xttype import StockAccount
 from xtquant import xtconstant
 
 
+def _get_attr_safe(obj, attr_name, default=0.0):
+    """
+    Safely get attribute from object with multiple fallback names
+
+    Args:
+        obj: Object to get attribute from
+        attr_name: Primary attribute name
+        default: Default value if not found
+
+    Returns:
+        Attribute value or default
+    """
+    # Try primary name first
+    if hasattr(obj, attr_name):
+        return getattr(obj, attr_name)
+
+    # Alternative name mappings for different QMT API versions
+    alternatives = {
+        'pnl_ratio': ['profit_rate', 'profit_ratio'],
+        'pnl_money': ['profit_money', 'profit_amount', 'pnl_amount', 'float_profit']
+    }
+
+    # Try alternative names
+    for alt_name in alternatives.get(attr_name, []):
+        if hasattr(obj, alt_name):
+            return getattr(obj, alt_name)
+
+    # Return default if not found
+    if default is not None:
+        print(f"[XtTrader] Warning: Attribute '{attr_name}' not found, using default: {default}")
+
+    return default
+
+
 class XtTraderCallback(XtQuantTraderCallback):
     """
     miniQMT交易回调类
@@ -54,8 +88,8 @@ class XtTraderCallback(XtQuantTraderCallback):
             'total_asset': asset.total_asset,
             'cash': asset.cash,
             'market_value': asset.market_value,
-            'pnl_ratio': asset.pnl_ratio,
-            'pnl_money': asset.pnl_money
+            'pnl_ratio': _get_attr_safe(asset, 'pnl_ratio', 0.0),
+            'pnl_money': _get_attr_safe(asset, 'pnl_money', 0.0)
         }
 
     def on_stock_order(self, order):
@@ -205,8 +239,13 @@ class XtTrader:
                 else:
                     print(f"[XtTrader] 取消订阅失败，错误码: {unsubscribe_result}")
 
-                # 释放连接
-                self.trader.release()
+                # 停止交易线程（替代 release()）
+                if hasattr(self.trader, 'stop'):
+                    self.trader.stop()
+                    print(f"[XtTrader] 交易线程已停止")
+                else:
+                    print(f"[XtTrader] 警告: stop() 方法不存在，跳过")
+
                 self.connected = False
                 print(f"[XtTrader] 已断开连接: {self.account_id}")
         except Exception as e:
@@ -251,8 +290,8 @@ class XtTrader:
                     'total_asset': asset.total_asset,
                     'cash': asset.cash,
                     'market_value': asset.market_value,
-                    'pnl_ratio': asset.pnl_ratio,
-                    'pnl_money': asset.pnl_money
+                    'pnl_ratio': _get_attr_safe(asset, 'pnl_ratio', 0.0),
+                    'pnl_money': _get_attr_safe(asset, 'pnl_money', 0.0)
                 }
                 print(f"[XtTrader] 账户查询成功: "
                       f"总资产={result['total_asset']:.2f}, "
@@ -302,8 +341,8 @@ class XtTrader:
                     'can_use_volume': pos.can_use_volume,
                     'open_price': pos.open_price,
                     'market_value': pos.market_value,
-                    'pnl_ratio': pos.pnl_ratio,
-                    'pnl_money': pos.pnl_money
+                    'pnl_ratio': _get_attr_safe(pos, 'pnl_ratio', 0.0),
+                    'pnl_money': _get_attr_safe(pos, 'pnl_money', 0.0)
                 })
 
             print(f"[XtTrader] 持仓查询成功: 共{len(result)}只股票")
