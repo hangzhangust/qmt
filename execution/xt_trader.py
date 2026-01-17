@@ -152,16 +152,36 @@ class XtTrader:
                 # 默认为股票账户
                 self.account = StockAccount(self.account_id, "STOCK")
 
-            # 创建交易对象
-            # XtQuantTrader构造函数参数: path, session, callback=None
-            self.trader = XtQuantTrader(self.xtquant_path, self.session_id, self.callback)
+            # 创建交易对象（正确的构造函数只接受2个参数：path和session_id）
+            print(f"[XtTrader] 创建交易对象: path={self.xtquant_path}, session={self.session_id}")
+            self.trader = XtQuantTrader(self.xtquant_path, self.session_id)
+
+            # 注册回调（必须在构造函数之后单独调用）
+            print(f"[XtTrader] 注册回调对象")
+            self.trader.register_callback(self.callback)
+
+            # 启动交易线程（必须在connect之前调用）
+            print(f"[XtTrader] 启动交易线程")
+            self.trader.start()
 
             # 连接账户
+            print(f"[XtTrader] 连接账户: {self.account_id}")
             connect_result = self.trader.connect()
 
             if connect_result == 0:
                 self.connected = True
-                print(f"[XtTrader] 连接成功: {self.account_id}")
+                print(f"[XtTrader] 连接成功")
+
+                # 订阅账户更新（连接成功后必须订阅才能收到推送）
+                print(f"[XtTrader] 订阅账户更新")
+                subscribe_result = self.trader.subscribe(self.account)
+
+                if subscribe_result == 0:
+                    print(f"[XtTrader] 订阅成功: {self.account_id}")
+                else:
+                    print(f"[XtTrader] 警告: 订阅失败，错误码: {subscribe_result}")
+                    print(f"[XtTrader] 注意: 查询功能仍可用，但可能无法收到实时推送")
+
                 return True
             else:
                 print(f"[XtTrader] 连接失败，错误码: {connect_result}")
@@ -177,11 +197,33 @@ class XtTrader:
         """断开连接"""
         try:
             if self.trader and self.connected:
+                # 先取消订阅账户更新
+                print(f"[XtTrader] 取消订阅账户")
+                unsubscribe_result = self.trader.unsubscribe(self.account)
+                if unsubscribe_result == 0:
+                    print(f"[XtTrader] 取消订阅成功")
+                else:
+                    print(f"[XtTrader] 取消订阅失败，错误码: {unsubscribe_result}")
+
+                # 释放连接
                 self.trader.release()
                 self.connected = False
                 print(f"[XtTrader] 已断开连接: {self.account_id}")
         except Exception as e:
             print(f"[XtTrader] 断开连接异常: {e}")
+
+    def is_ready(self) -> bool:
+        """
+        检查交易接口是否准备就绪
+
+        返回:
+            bool: 是否准备就绪（已连接且交易对象存在）
+        """
+        if not self.connected:
+            return False
+        if not self.trader:
+            return False
+        return True
 
     def query_account(self) -> Optional[Dict]:
         """
