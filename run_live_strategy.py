@@ -210,6 +210,7 @@ def validate_live_trading_setup(config: dict, mode: str, dry_run: bool) -> bool:
             from execution.xt_trader import XtTrader
 
             trader = XtTrader(
+                xtquant_path=config.get('xtquant_path', ''),
                 account_id=config['xtquant_account_id'],
                 session_id=config['xtquant_session_id']
             )
@@ -291,6 +292,23 @@ def main():
     print(f"   仓位比例: {config.get('all_weather_position_ratio', 0.5) * 100:.1f}%")
     print(f"   再平衡周期: {config.get('rebalance_period', 60)}天")
 
+    # Extract xtquant_path with fallback
+    xtquant_path = config.get('xtquant_path', '')
+    if not xtquant_path:
+        print("   警告: xtquant_path未配置，使用系统默认")
+        print("   Warning: xtquant_path not configured, using system default")
+    else:
+        print(f"   QMT路径: {xtquant_path}")
+
+    # Extract timeout configurations with defaults
+    api_timeout = config.get('api_timeout', 5.0)
+    max_retries = config.get('max_retries', 3)
+    callback_timeout = config.get('callback_timeout', 2.0)
+
+    print(f"   API超时时间: {api_timeout}秒")
+    print(f"   最大重试次数: {max_retries}")
+    print(f"   回调超时时间: {callback_timeout}秒")
+
     # 1.5 验证设置（仅对live模式）
     if args.mode == 'live':
         if not validate_live_trading_setup(config, args.mode, args.dry_run):
@@ -316,7 +334,9 @@ def main():
     trader = XtTrader(
         account_id=config['xtquant_account_id'],
         session_id=config['xtquant_session_id'],
-        xtquant_path=config.get('xtquant_path', None)
+        xtquant_path=xtquant_path,
+        api_timeout=api_timeout,
+        max_retries=max_retries
     )
 
     if args.dry_run or args.mode == 'test':

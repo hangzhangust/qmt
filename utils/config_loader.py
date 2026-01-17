@@ -112,6 +112,29 @@ class ConfigLoader:
             if not 0 < rt <= 1:
                 raise ValueError(f"rebalance_threshold必须在(0,1]范围内，当前值: {rt}")
 
+        # Validate xtquant_path if provided
+        if 'xtquant_path' in config and config['xtquant_path']:
+            path = config['xtquant_path']
+            if not os.path.exists(path):
+                print(f"Warning: xtquant_path does not exist: {path}")
+                print(f"Please verify the QMT installation path")
+
+        # Validate timeout settings
+        if 'api_timeout' in config:
+            timeout = config['api_timeout']
+            if not isinstance(timeout, (int, float)) or timeout < 0.1 or timeout > 60:
+                raise ValueError(f"api_timeout must be between 0.1 and 60 seconds, current: {timeout}")
+
+        if 'max_retries' in config:
+            retries = config['max_retries']
+            if not isinstance(retries, int) or retries < 0 or retries > 10:
+                raise ValueError(f"max_retries must be between 0 and 10, current: {retries}")
+
+        if 'callback_timeout' in config:
+            cb_timeout = config['callback_timeout']
+            if not isinstance(cb_timeout, (int, float)) or cb_timeout < 0.1 or cb_timeout > 10:
+                raise ValueError(f"callback_timeout must be between 0.1 and 10 seconds, current: {cb_timeout}")
+
         print("配置验证通过")
 
     @staticmethod

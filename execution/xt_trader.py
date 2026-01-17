@@ -4,7 +4,10 @@ miniQMT Trading Interface Wrapper Module
 Encapsulates xtquant.xttrader API to provide unified trading interface
 """
 import time
+import threading
+import uuid
 from typing import Dict, List, Optional, Tuple
+from concurrent.futures import TimeoutError
 from xtquant.xttrader import XtQuantTrader, XtQuantTraderCallback
 from xtquant.xttype import StockAccount
 from xtquant import xtconstant
@@ -133,6 +136,73 @@ class XtTraderCallback(XtQuantTraderCallback):
               f"价格: {trade.traded_price}")
 
 
+class EnhancedXtTraderCallback(XtQuantTraderCallback):
+    """
+    Enhanced callback with event-based synchronization
+    Solves the race condition where callbacks don't fire fast enough
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.response_events = {}  # request_id -> threading.Event
+        self.response_results = {}  # request_id -> result dict
+        self.lock = threading.Lock()
+        self.request_counter = 0
+
+    def create_request(self) -> tuple:
+        """Create a new request tracking entry"""
+        request_id = f"req_{self.request_counter}_{uuid.uuid4().hex[:8]}"
+        self.request_counter += 1
+        event = threading.Event()
+
+        with self.lock:
+            self.response_events[request_id] = event
+
+        return request_id, event
+
+    def wait_for_response(self, request_id: str, timeout: float = None) -> dict:
+        """Wait for callback response with timeout"""
+        with self.lock:
+            event = self.response_events.pop(request_id, None)
+            if not event:
+                return {'success': False, 'error': 'Request not found'}
+
+        if timeout is None:
+            timeout = 2.0  # Default callback timeout
+
+        # Wait for event to be set by callback
+        if event.wait(timeout=timeout):
+            with self.lock:
+                return self.response_results.pop(request_id, {'success': False, 'error': 'No result'})
+        else:
+            # Timeout - cleanup
+            with self.lock:
+                self.response_results.pop(request_id, None)
+            return {'success': False, 'error': f'Timeout after {timeout}s'}
+
+    def on_order_stock_async_response(self, response):
+        """Handle async order response with event signaling"""
+        # Extract or generate request_id
+        request_id = getattr(response, 'request_id', 'fallback_order')
+
+        with self.lock:
+            event = self.response_events.pop(request_id, None)
+            if event:
+                result = {
+                    'success': bool(response.order_id),
+                    'order_id': response.order_id if hasattr(response, 'order_id') else None,
+                    'error_msg': getattr(response, 'error_msg', None)
+                }
+                self.response_results[request_id] = result
+                event.set()  # Signal waiting thread
+
+        # Keep original logging
+        if response.order_id:
+            print(f"[回调] 异步下单成功: {response.order_id}")
+        else:
+            print(f"[回调] 异步下单失败: {response.error_msg}")
+
+
 class XtTrader:
     """
     miniQMT交易接口封装类
@@ -140,7 +210,8 @@ class XtTrader:
     """
 
     def __init__(self, account_id: str, session_id: int = 0,
-                 xtquant_path: str = None, callback: XtTraderCallback = None):
+                 xtquant_path: str = None, callback: XtTraderCallback = None,
+                 api_timeout: float = 5.0, max_retries: int = 3):
         """
         初始化交易接口
 
@@ -148,15 +219,21 @@ class XtTrader:
             account_id: 账户ID
             session_id: 会话ID（默认0）
             xtquant_path: miniQMT路径（默认None，使用系统默认）
-            callback: 回调对象（默认None，自动创建）
+            callback: 回调对象（默认None，自动创建EnhancedXtTraderCallback）
+            api_timeout: API调用超时时间(秒)（默认5.0）
+            max_retries: 最大重试次数（默认3）
         """
         self.account_id = account_id
         self.session_id = session_id
         # 确保xtquant_path不是None，默认为空字符串（使用系统默认路径）
         self.xtquant_path = xtquant_path if xtquant_path is not None else ""
 
-        # 创建回调对象
-        self.callback = callback if callback else XtTraderCallback()
+        # Timeout configuration
+        self.api_timeout = api_timeout
+        self.max_retries = max_retries
+
+        # 创建增强回调对象（使用事件同步）
+        self.callback = callback if callback else EnhancedXtTraderCallback()
 
         # 创建交易对象（暂不连接）
         self.trader = None
@@ -165,7 +242,8 @@ class XtTrader:
         # 连接状态
         self.connected = False
 
-        print(f"[XtTrader] 初始化交易接口: 账户ID={account_id}, 会话ID={session_id}")
+        print(f"[XtTrader] 初始化交易接口: 账户ID={account_id}, 会话ID={session_id}, "
+              f"超时={api_timeout}s, 重试={max_retries}次")
 
     def connect(self) -> bool:
         """
@@ -371,6 +449,70 @@ class XtTrader:
                 return pos
 
         return None
+
+    def query_account_with_retry(self) -> Optional[Dict]:
+        """Query account with retry logic and exponential backoff"""
+        for attempt in range(self.max_retries + 1):
+            try:
+                if not self.connected:
+                    print("[XtTrader] 未连接，无法查询账户")
+                    return None
+
+                start_time = time.time()
+                result = self.query_account()
+                elapsed = time.time() - start_time
+
+                if result:
+                    print(f"[XtTrader] 账户查询成功: 耗时 {elapsed:.2f}秒")
+                    return result
+                else:
+                    print(f"[XtTrader] 账户查询失败 (尝试 {attempt + 1}/{self.max_retries + 1})")
+                    if attempt < self.max_retries:
+                        backoff = 0.1 * (2 ** attempt)  # Exponential backoff
+                        time.sleep(backoff)
+                        continue
+
+            except Exception as e:
+                print(f"[XtTrader] 查询账户异常 (尝试 {attempt + 1}/{self.max_retries + 1}): {e}")
+                if attempt < self.max_retries:
+                    backoff = 0.1 * (2 ** attempt)
+                    time.sleep(backoff)
+                    continue
+
+        print(f"[XtTrader] 账户查询失败，已达最大重试次数: {self.max_retries}")
+        return None
+
+    def query_positions_with_retry(self) -> List[Dict]:
+        """Query positions with retry logic and exponential backoff"""
+        for attempt in range(self.max_retries + 1):
+            try:
+                if not self.connected:
+                    print("[XtTrader] 未连接，无法查询持仓")
+                    return []
+
+                start_time = time.time()
+                result = self.query_positions()
+                elapsed = time.time() - start_time
+
+                if result is not None:
+                    print(f"[XtTrader] 持仓查询成功: 耗时 {elapsed:.2f}秒，共{len(result)}只股票")
+                    return result
+                else:
+                    print(f"[XtTrader] 持仓查询失败 (尝试 {attempt + 1}/{self.max_retries + 1})")
+                    if attempt < self.max_retries:
+                        backoff = 0.1 * (2 ** attempt)
+                        time.sleep(backoff)
+                        continue
+
+            except Exception as e:
+                print(f"[XtTrader] 查询持仓异常 (尝试 {attempt + 1}/{self.max_retries + 1}): {e}")
+                if attempt < self.max_retries:
+                    backoff = 0.1 * (2 ** attempt)
+                    time.sleep(backoff)
+                    continue
+
+        print(f"[XtTrader] 持仓查询失败，已达最大重试次数: {self.max_retries}")
+        return []
 
     def order_stock(self, stock_code: str, order_type: str,
                     volume: int, price_type: str = 'limit',
