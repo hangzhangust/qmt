@@ -316,12 +316,13 @@ class BacktestEngine:
 
         print("=" * 80 + "\n")
 
-    def calculate_enhanced_metrics(self, strategy: bt.Strategy) -> Dict[str, Any]:
+    def calculate_enhanced_metrics(self, strategy: bt.Strategy, benchmark_return: float = None) -> Dict[str, Any]:
         """
         计算增强的性能指标
 
         参数:
             strategy: 策略实例
+            benchmark_return: 基准收益率（可选），如果不提供则使用默认的年化收益率
 
         返回:
             dict: 增强的性能指标
@@ -376,6 +377,18 @@ class BacktestEngine:
             enhanced['sortino_ratio'] = enhanced['sharpe_ratio'] * 1.414
         else:
             enhanced['sortino_ratio'] = 0
+
+        # 超额收益（相对基准）
+        # 默认使用年化3%的无风险利率作为基准
+        # 如果提供了benchmark_return，则使用提供的基准
+        if benchmark_return is not None:
+            enhanced['excess_return'] = enhanced['avg_annual_return'] - benchmark_return
+            enhanced['benchmark_return'] = benchmark_return
+        else:
+            # 使用无风险利率3%作为基准
+            risk_free_rate = 0.03
+            enhanced['excess_return'] = enhanced['avg_annual_return'] - risk_free_rate
+            enhanced['benchmark_return'] = risk_free_rate
 
         # 交易统计
         if 'trades' in results and results['trades']:

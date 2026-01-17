@@ -108,6 +108,7 @@ class XtDataFeed:
             DataFrame: 历史数据，如果失败返回None
         """
         import time
+        from datetime import datetime, timedelta
 
         # 决定是否使用缓存
         should_use_cache = use_cache if use_cache is not None else self.use_cache
@@ -118,7 +119,22 @@ class XtDataFeed:
             if data is not None:
                 return data
 
-        # 下载历史数据
+        # Check if date range is more than 2 years - use chunked download
+        try:
+            start_dt = datetime.strptime(start_date, '%Y%m%d')
+            end_dt = datetime.strptime(end_date, '%Y%m%d')
+            date_range_days = (end_dt - start_dt).days
+
+            # Use chunked download for ranges longer than 2 years
+            if date_range_days > 730:  # 2 years
+                print(f"长时间范围数据下载（{date_range_days // 365}年），使用分块下载: {stock_code}")
+                return self._get_history_data_chunked(
+                    stock_code, field_list, start_date, end_date, period, should_use_cache
+                )
+        except Exception as e:
+            print(f"日期范围检查失败，使用常规下载: {e}")
+
+        # 常规下载历史数据
         success = self.download_history_data(stock_code, period, start_date, end_date)
         if not success:
             return None
@@ -179,6 +195,121 @@ class XtDataFeed:
                     return None
 
         return None
+
+    def _get_history_data_chunked(self, stock_code: str, field_list: List[str],
+                                  start_date: str, end_date: str, period: str = '1d',
+                                  use_cache: bool = True) -> Optional[pd.DataFrame]:
+        """
+        分块获取长时间范围的历史数据
+
+        参数:
+            stock_code: 股票代码
+            field_list: 字段列表
+            start_date: 开始日期 (YYYYMMDD)
+            end_date: 结束日期 (YYYYMMDD)
+            period: 周期
+            use_cache: 是否使用缓存
+
+        返回:
+            DataFrame: 合并后的历史数据
+        """
+        import time
+        from datetime import datetime, timedelta
+
+        try:
+            all_data = []
+            current_start = datetime.strptime(start_date, '%Y%m%d')
+            final_end = datetime.strptime(end_date, '%Y%m%d')
+
+            # Split into 1-year chunks
+            chunk_years = 1
+            chunk_days = chunk_years * 365
+
+            chunk_num = 0
+            while current_start < final_end:
+                chunk_num += 1
+                current_end = min(current_start + timedelta(days=chunk_days), final_end)
+
+                chunk_start_str = current_start.strftime('%Y%m%d')
+                chunk_end_str = current_end.strftime('%Y%m%d')
+
+                print(f"  下载第 {chunk_num} 块: {chunk_start_str} - {chunk_end_str}")
+
+                # Download this chunk
+                success = self.download_history_data(stock_code, period, chunk_start_str, chunk_end_str)
+                if not success:
+                    print(f"  警告: 第 {chunk_num} 块下载失败，跳过")
+                    current_start = current_end
+                    continue
+
+                # Wait for download
+                time.sleep(0.5)
+
+                # Get data with retries
+                max_retries = 3
+                chunk_data = None
+                for retry in range(max_retries):
+                    try:
+                        data_dict = xtdata.get_market_data_ex(
+                            field_list=field_list,
+                            stock_list=[stock_code],
+                            period=period,
+                            start_time=chunk_start_str,
+                            end_time=chunk_end_str,
+                            dividend_type='none',
+                            fill_data=True
+                        )
+
+                        if data_dict is not None and stock_code in data_dict and data_dict[stock_code] is not None:
+                            chunk_data = data_dict[stock_code]
+                            break
+                        else:
+                            if retry < max_retries - 1:
+                                print(f"  第 {chunk_num} 块数据未准备好，重试 {retry + 1}/{max_retries}")
+                                time.sleep(1)
+                            else:
+                                print(f"  警告: 第 {chunk_num} 块无数据（可能该时间段ETF未上市）")
+
+                    except Exception as e:
+                        if retry < max_retries - 1:
+                            print(f"  第 {chunk_num} 块获取异常，重试 {retry + 1}/{max_retries}: {e}")
+                            time.sleep(1)
+                        else:
+                            print(f"  警告: 第 {chunk_num} 块获取失败: {e}")
+
+                # If we got data, add it to our collection
+                if chunk_data is not None and not chunk_data.empty:
+                    all_data.append(chunk_data)
+
+                # Move to next chunk
+                current_start = current_end + timedelta(days=1)
+
+            # Combine all chunks
+            if all_data:
+                print(f"  合并 {len(all_data)} 个数据块")
+                combined_data = pd.concat(all_data, axis=0)
+
+                # Remove duplicates (in case of overlap)
+                combined_data = combined_data[~combined_data.index.duplicated(keep='first')]
+
+                # Sort by date
+                combined_data = combined_data.sort_index()
+
+                # Save to cache
+                if use_cache and self.cache:
+                    self.cache.save_to_cache(stock_code, combined_data, start_date, end_date, period)
+
+                print(f"  获取数据成功: {len(combined_data)} 条记录")
+                return combined_data
+            else:
+                print(f"  错误: 未获取到任何数据")
+                return None
+
+        except Exception as e:
+            print(f"分块下载失败: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
 
     def get_instrument_info(self, stock_code: str) -> dict:
         """
