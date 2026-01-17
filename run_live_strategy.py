@@ -346,7 +346,8 @@ def main():
     if args.dry_run or args.mode == 'test':
         print("   [WARNING] Test mode: Skipping actual connection")
         print("   [OK] Engine initialized (test mode)")
-        return 0
+        # 在测试模式下，手动设置初始化标志
+        engine.is_initialized = True
     else:
         if not engine.initialize():
             print("\n[X] Engine initialization failed")

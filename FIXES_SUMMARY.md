@@ -215,6 +215,11 @@ python run_backtest.py --start 20230101 --end 20231231 --position_ratio 0.3
 
 # 30天再平衡周期
 python run_backtest.py --start 20150101 --end 20260116 --rebalance_period 30 --plot --save_plot backtest_2023.png
+
+
+
+python run_backtest.py --start 20150601 --end 20260117 --show_metrics --rebalance_period 30
+
 ```
 
 ---

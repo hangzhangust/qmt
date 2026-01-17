@@ -35,12 +35,12 @@ class AllWeatherStrategy(BaseStrategy):
         'stocks': {
             'target_weight': 0.25,
             'etfs': [
-                "159380.SZ",  # A500
+                "510300.SH",  # 沪深300ETF (2012年上市)
                 "513030.SH",  # 纳斯达克指数ETF
                 "513650.SH",  # 标普500
             ],
             'names': {
-                "159380.SZ": "A500",
+                "510300.SH": "沪深300ETF",
                 "513030.SH": "纳斯达克指数ETF",
                 "513650.SH": "标普500"
             }
@@ -49,11 +49,11 @@ class AllWeatherStrategy(BaseStrategy):
         'long_bonds': {
             'target_weight': 0.25,
             'etfs': [
-                "511160.SH",  # 国债ETF
+                "511010.SH",  # 国债ETF (2013年上市)
                 "501300.SH",  # 长债
             ],
             'names': {
-                "511160.SH": "国债ETF",
+                "511010.SH": "国债ETF",
                 "501300.SH": "长债"
             }
         },
@@ -61,12 +61,12 @@ class AllWeatherStrategy(BaseStrategy):
         'short_bonds': {
             'target_weight': 0.25,
             'etfs': [
-                "511010.SH",  # 国债ETF-短
                 "511880.SH",  # 银华日利
+                "511990.SH",  # 短债
             ],
             'names': {
-                "511010.SH": "国债ETF-短",
-                "511880.SH": "银华日利"
+                "511880.SH": "银华日利",
+                "511990.SH": "短债"
             }
         }
     }
