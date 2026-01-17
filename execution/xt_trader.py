@@ -152,7 +152,8 @@ class XtTrader:
                 self.account = StockAccount(self.account_id, "STOCK")
 
             # 创建交易对象
-            self.trader = XtQuantTrader(self.callback, self.session_id)
+            # XtQuantTrader构造函数参数: path, session, callback=None
+            self.trader = XtQuantTrader(self.xtquant_path, self.session_id, self.callback)
 
             # 连接账户
             connect_result = self.trader.connect()
