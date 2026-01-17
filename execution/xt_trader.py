@@ -118,7 +118,8 @@ class XtTrader:
         """
         self.account_id = account_id
         self.session_id = session_id
-        self.xtquant_path = xtquant_path
+        # 确保xtquant_path不是None，默认为空字符串（使用系统默认路径）
+        self.xtquant_path = xtquant_path if xtquant_path is not None else ""
 
         # 创建回调对象
         self.callback = callback if callback else XtTraderCallback()
