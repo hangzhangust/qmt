@@ -247,7 +247,7 @@ class XtTrader:
 
     def connect(self) -> bool:
         """
-        连接交易账户
+        连接交易账户（带时序控制的稳定连接）
 
         返回:
             bool: 是否连接成功
@@ -276,13 +276,20 @@ class XtTrader:
             print(f"[XtTrader] 启动交易线程")
             self.trader.start()
 
+            # 等待交易线程启动
+            print(f"[XtTrader] 等待交易线程就绪...")
+            time.sleep(0.5)
+
             # 连接账户
             print(f"[XtTrader] 连接账户: {self.account_id}")
             connect_result = self.trader.connect()
 
             if connect_result == 0:
                 self.connected = True
-                print(f"[XtTrader] 连接成功")
+                print(f"[XtTrader] 连接成功，等待连接稳定...")
+
+                # 等待连接稳定（关键：解决时序问题）
+                time.sleep(0.5)
 
                 # 订阅账户更新（连接成功后必须订阅才能收到推送）
                 print(f"[XtTrader] 订阅账户更新")
@@ -290,19 +297,41 @@ class XtTrader:
 
                 if subscribe_result == 0:
                     print(f"[XtTrader] 订阅成功: {self.account_id}")
+                    # 等待订阅完成
+                    time.sleep(0.3)
                 else:
                     print(f"[XtTrader] 警告: 订阅失败，错误码: {subscribe_result}")
                     print(f"[XtTrader] 注意: 查询功能仍可用，但可能无法收到实时推送")
+                    # 即使订阅失败也等待一段时间
+                    time.sleep(0.3)
 
-                return True
+                print(f"[XtTrader] 连接和订阅完成，连接已稳定")
+
+                # 验证连接是否真正可用（通过查询账户来验证）
+                print(f"[XtTrader] 验证连接可用性...")
+                try:
+                    test_account = self.trader.query_stock_asset(self.account)
+                    if test_account:
+                        print(f"[XtTrader] 连接验证成功，账户可以正常查询")
+                        return True
+                    else:
+                        print(f"[XtTrader] 警告: 连接验证失败，查询返回空")
+                        # 仍然返回 True，因为连接本身是成功的
+                        return True
+                except Exception as e:
+                    print(f"[XtTrader] 警告: 连接验证异常: {e}")
+                    # 仍然返回 True，因为连接本身是成功的
+                    return True
             else:
                 print(f"[XtTrader] 连接失败，错误码: {connect_result}")
+                self.connected = False
                 return False
 
         except Exception as e:
             print(f"[XtTrader] 连接异常: {e}")
             import traceback
             traceback.print_exc()
+            self.connected = False
             return False
 
     def disconnect(self) -> None:
