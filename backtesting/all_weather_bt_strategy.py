@@ -56,11 +56,13 @@ class AllWeatherStrategy(bt.Strategy):
         """
         weights = {}
 
-        for category, etfs in self.params.etf_allocation.items():
+        # etf_allocation structure: {category: {'target_weight': float, 'etfs': [...], 'names': {...}}}
+        for category, category_config in self.params.etf_allocation.items():
             category_weight = self.params.category_weights.get(category, 0.25)
-            etf_weight = (category_weight * self.params.position_ratio) / len(etfs)
+            etf_list = category_config['etfs']  # Get the actual ETF list
+            etf_weight = (category_weight * self.params.position_ratio) / len(etf_list)
 
-            for etf in etfs:
+            for etf in etf_list:
                 weights[etf] = etf_weight
 
         return weights

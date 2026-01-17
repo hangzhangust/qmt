@@ -32,7 +32,7 @@ class XtDataFeed:
 
     def get_market_data(self, field_list: List[str], stock_list: List[str],
                        period: str = '1d', count: int = 1, start_time: str = '',
-                       end_time: str = '', dividend_type: str = 'follow',
+                       end_time: str = '', dividend_type: str = 'none',
                        fill_data: bool = True) -> dict:
         """
         获取市场数据（实时或历史）
@@ -44,7 +44,7 @@ class XtDataFeed:
             count: 数据条数，-1表示全部
             start_time: 开始时间 (YYYYMMDD或YYYYMMDD HHMMSS格式)
             end_time: 结束时间 (YYYYMMDD或YYYYMMDD HHMMSS格式)
-            dividend_type: 除权类型，'none'/'front'/'follow'/'back'/'front_follow'
+            dividend_type: 除权类型，'none'/'front'/'follow'/'back'/'front_follow' (ETFs use 'none')
             fill_data: 是否填充数据
 
         返回:
@@ -107,6 +107,8 @@ class XtDataFeed:
         返回:
             DataFrame: 历史数据，如果失败返回None
         """
+        import time
+
         # 决定是否使用缓存
         should_use_cache = use_cache if use_cache is not None else self.use_cache
 
@@ -121,33 +123,62 @@ class XtDataFeed:
         if not success:
             return None
 
-        # 获取数据
-        try:
-            data_dict = xtdata.get_market_data_ex(
-                field_list=field_list,
-                stock_list=[stock_code],
-                period=period,
-                start_time=start_date,
-                end_time=end_date,
-                dividend_type='follow',
-                fill_data=True
-            )
+        # Wait a moment for download to complete
+        time.sleep(0.5)
 
-            if stock_code not in data_dict or data_dict[stock_code] is None:
-                print(f"获取数据失败: {stock_code}")
-                return None
+        # 获取数据 - Try multiple times
+        max_retries = 3
+        for retry in range(max_retries):
+            try:
+                # ETFs don't support dividend adjustment, use 'none'
+                # 股票代码以.SH或.SZ结尾的ETF不支持除权，使用'none'
+                dividend_type = 'none'
 
-            data = data_dict[stock_code]
+                data_dict = xtdata.get_market_data_ex(
+                    field_list=field_list,
+                    stock_list=[stock_code],
+                    period=period,
+                    start_time=start_date,
+                    end_time=end_date,
+                    dividend_type=dividend_type,
+                    fill_data=True
+                )
 
-            # 保存到缓存
-            if should_use_cache and self.cache:
-                self.cache.save_to_cache(stock_code, data, start_date, end_date, period)
+                # Check if data_dict is None
+                if data_dict is None:
+                    if retry < max_retries - 1:
+                        print(f"数据未准备好，重试 {retry + 1}/{max_retries}: {stock_code}")
+                        time.sleep(1)
+                        continue
+                    else:
+                        print(f"获取数据失败（返回None）: {stock_code}")
+                        return None
 
-            return data
+                # Check if stock_code exists in dict
+                if stock_code not in data_dict or data_dict[stock_code] is None:
+                    print(f"获取数据失败（无数据）: {stock_code}")
+                    return None
 
-        except Exception as e:
-            print(f"获取历史数据失败: {e}")
-            return None
+                data = data_dict[stock_code]
+
+                # 保存到缓存
+                if should_use_cache and self.cache:
+                    self.cache.save_to_cache(stock_code, data, start_date, end_date, period)
+
+                return data
+
+            except Exception as e:
+                if retry < max_retries - 1:
+                    print(f"获取历史数据异常，重试 {retry + 1}/{max_retries}: {e}")
+                    time.sleep(1)
+                    continue
+                else:
+                    print(f"获取历史数据失败: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return None
+
+        return None
 
     def get_instrument_info(self, stock_code: str) -> dict:
         """

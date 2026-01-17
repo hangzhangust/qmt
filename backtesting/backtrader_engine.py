@@ -303,7 +303,8 @@ class BacktestEngine:
         # 夏普比率
         if 'sharpe_ratio' in results and results['sharpe_ratio']:
             sharpe = results['sharpe_ratio']
-            print(f"\n夏普比率: {sharpe.get('sharperatio', 0):.4f}")
+            sharpe_value = sharpe.get('sharperatio') or 0
+            print(f"\n夏普比率: {sharpe_value:.4f}")
 
         # 年化收益率
         if 'annual_return' in results and results['annual_return']:
