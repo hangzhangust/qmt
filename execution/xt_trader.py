@@ -149,7 +149,7 @@ class XtTrader:
                 self.account = StockAccount(account_str, market)
             else:
                 # 默认为股票账户
-                self.account = StockAccount(self.account_id, 1)
+                self.account = StockAccount(self.account_id, "STOCK")
 
             # 创建交易对象
             self.trader = XtQuantTrader(self.callback, self.session_id)

@@ -1,0 +1,19 @@
+# Core dependencies for QMT trading system
+# 核心依赖
+
+# Backtesting framework
+backtrader>=1.9.76
+
+# XtQuant API for market data and trading
+xtquant>=2.1.0
+
+# Data processing
+pandas>=1.5.0
+numpy>=1.23.0
+
+# Visualization
+matplotlib>=3.5.0
+
+# Utilities
+python-dateutil>=2.8.0
+pytz>=2022.1
