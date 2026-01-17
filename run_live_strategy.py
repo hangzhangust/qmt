@@ -136,6 +136,121 @@ def print_banner(config: dict, mode: str):
     print()
 
 
+def validate_live_trading_setup(config: dict, mode: str, dry_run: bool) -> bool:
+    """
+    验证实盘交易设置
+
+    参数:
+        config: 配置字典
+        mode: 运行模式
+        dry_run: 是否为模拟运行
+
+    返回:
+        bool: 验证是否通过
+    """
+    print("\n实盘交易设置验证 / Live Trading Setup Validation")
+    print("-" * 80)
+
+    all_ok = True
+
+    # 1. Check XtQuant connection
+    print("\n1. 检查 XtQuant 数据连接 / Checking XtQuant Data Connection...")
+    try:
+        from xtquant import xtdata
+        result = xtdata.get_full_tick(['000001.SZ'])
+        if result is not None:
+            print("   [OK] XtQuant 数据连接正常 / XtQuant Data Connected")
+        else:
+            print("   [X] XtQuant 数据连接失败 / XtQuant Data Connection Failed")
+            print("   请确保 MiniQMT 客户端正在运行 / Please ensure MiniQMT client is running")
+            all_ok = False
+    except Exception as e:
+        print(f"   [X] XtQuant 连接异常 / XtQuant Connection Error: {e}")
+        all_ok = False
+
+    # 2. Validate configuration
+    print("\n2. 验证配置参数 / Validating Configuration...")
+    required_configs = {
+        'xtquant_account_id': '账户ID / Account ID',
+        'xtquant_session_id': '会话ID / Session ID',
+    }
+
+    missing_configs = []
+    for cfg, desc in required_configs.items():
+        if not config.get(cfg):
+            print(f"   [X] 缺少配置 / Missing Config: {cfg} ({desc})")
+            missing_configs.append(cfg)
+
+    if missing_configs:
+        print(f"   请运行设置向导配置以上参数 / Please run setup wizard to configure above parameters:")
+        print(f"   python setup_live_trading.py")
+        all_ok = False
+    else:
+        account_id = config['xtquant_account_id']
+        session_id = config['xtquant_session_id']
+        print(f"   [OK] 账户ID / Account ID: {account_id}")
+        print(f"   [OK] 会话ID / Session ID: {session_id}")
+
+        # Validate account ID format
+        if '.' not in account_id:
+            print(f"   [WARNING] 账户ID格式可能不正确（应包含.SH或.SZ后缀）")
+            print(f"   [WARNING] Account ID format may be incorrect (should include .SH or .SZ suffix)")
+        else:
+            market = account_id.split('.')[-1]
+            if market in ['SH', 'SZ']:
+                print(f"   [OK] 市场 / Market: {market}")
+            else:
+                print(f"   [X] 无效的市场后缀 / Invalid market suffix: {market}")
+                all_ok = False
+
+    # 3. For live mode (not dry-run), test trader connection
+    if mode == 'live' and not dry_run and all_ok:
+        print("\n3. 测试交易接口连接 / Testing Trading Interface Connection...")
+        try:
+            from execution.xt_trader import XtTrader
+
+            trader = XtTrader(
+                account_id=config['xtquant_account_id'],
+                session_id=config['xtquant_session_id']
+            )
+
+            if trader.connect():
+                print("   [OK] 交易接口连接成功 / Trading Interface Connected")
+
+                # Query account
+                account_info = trader.query_account()
+                if account_info:
+                    print(f"   [OK] 账户查询成功 / Account Query Successful")
+                    print(f"       总资产 / Total Asset: {account_info['total_asset']:,.2f}")
+                    print(f"       可用资金 / Cash: {account_info['cash']:,.2f}")
+                else:
+                    print("   [X] 账户查询失败 / Account Query Failed")
+                    all_ok = False
+
+                trader.disconnect()
+            else:
+                print("   [X] 交易接口连接失败 / Trading Interface Connection Failed")
+                print("   请检查账户ID和会话ID是否正确 / Please check if account ID and session ID are correct")
+                all_ok = False
+
+        except Exception as e:
+            print(f"   [X] 交易接口测试失败 / Trading Interface Test Failed: {e}")
+            all_ok = False
+
+    print("\n" + "-" * 80)
+    if all_ok:
+        print("[OK] 验证通过 / Validation Passed")
+    else:
+        print("[X] 验证失败 / Validation Failed")
+        print("\n建议 / Suggestions:")
+        print("  1. 确保 MiniQMT 客户端正在运行 / Ensure MiniQMT client is running")
+        print("  2. 运行设置向导: python setup_live_trading.py / Run setup wizard")
+        print("  3. 检查配置文件 ~/QMT_Strategy_Data/strategy_config.json")
+        print("     Check config file ~/QMT_Strategy_Data/strategy_config.json")
+
+    return all_ok
+
+
 def main():
     """
     主函数
@@ -175,6 +290,17 @@ def main():
     print(f"   会话ID: {config.get('xtquant_session_id', 'N/A')}")
     print(f"   仓位比例: {config.get('all_weather_position_ratio', 0.5) * 100:.1f}%")
     print(f"   再平衡周期: {config.get('rebalance_period', 60)}天")
+
+    # 1.5 验证设置（仅对live模式）
+    if args.mode == 'live':
+        if not validate_live_trading_setup(config, args.mode, args.dry_run):
+            if not args.dry_run:
+                # Live mode failed validation
+                print("\n实盘模式验证失败，退出程序 / Live mode validation failed, exiting")
+                return 1
+            else:
+                # Dry-run mode, continue even with validation warnings
+                print("\n注意：模拟模式将继续运行 / Note: Dry-run mode will continue")
 
     # 2. 初始化策略
     print("\n2. 初始化策略...")
