@@ -71,7 +71,7 @@ class LiveTradingEngine:
                 if not self.trader.connect():
                     print("[LiveEngine] 错误: 交易接口连接失败")
                     return False
-            print("✓ 交易接口已连接")
+            print("[OK] 交易接口已连接")
 
             # 2. 恢复策略状态
             print("\n--- 恢复策略状态 ---")
