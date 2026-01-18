@@ -335,7 +335,7 @@ class XtTrader:
             return False
 
     def disconnect(self) -> None:
-        """断开连接"""
+        """断开连接（增强版：确保资源完全释放）"""
         try:
             if self.trader and self.connected:
                 # 先取消订阅账户更新
@@ -350,9 +350,12 @@ class XtTrader:
                 if hasattr(self.trader, 'stop'):
                     self.trader.stop()
                     print(f"[XtTrader] 交易线程已停止")
+                    print(f"[XtTrader] 等待资源清理...")
+                    time.sleep(2.0)  # 增加到2秒，确保线程完全停止
                 else:
                     print(f"[XtTrader] 警告: stop() 方法不存在，跳过")
 
+                # 显式释放对象引用
                 self.connected = False
                 print(f"[XtTrader] 已断开连接: {self.account_id}")
         except Exception as e:

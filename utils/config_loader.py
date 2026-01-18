@@ -52,6 +52,9 @@ class ConfigLoader:
             # 数据缓存配置
             "cache_enabled": True,
             "cache_expire_days": 7,
+
+            # 重连延迟配置（避免session冲突）
+            "reconnect_delay": 3.0,  # 断开后重连前的等待时间（秒）
         }
 
         # 尝试加载配置文件

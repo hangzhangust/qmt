@@ -7,6 +7,7 @@ import argparse
 import sys
 import os
 import signal
+from typing import Optional
 
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -136,7 +137,7 @@ def print_banner(config: dict, mode: str):
     print()
 
 
-def validate_live_trading_setup(config: dict, mode: str, dry_run: bool) -> bool:
+def validate_live_trading_setup(config: dict, mode: str, dry_run: bool) -> tuple[bool, Optional[XtTrader]]:
     """
     验证实盘交易设置
 
@@ -146,7 +147,7 @@ def validate_live_trading_setup(config: dict, mode: str, dry_run: bool) -> bool:
         dry_run: 是否为模拟运行
 
     返回:
-        bool: 验证是否通过
+        tuple[bool, Optional[XtTrader]]: (验证是否通过, 已连接的trader实例)
     """
     print("\n实盘交易设置验证 / Live Trading Setup Validation")
     print("-" * 80)
@@ -204,6 +205,7 @@ def validate_live_trading_setup(config: dict, mode: str, dry_run: bool) -> bool:
                 all_ok = False
 
     # 3. For live mode (not dry-run), test trader connection
+    trader = None  # 初始化trader变量
     if mode == 'live' and not dry_run and all_ok:
         print("\n3. 测试交易接口连接 / Testing Trading Interface Connection...")
         try:
@@ -227,16 +229,18 @@ def validate_live_trading_setup(config: dict, mode: str, dry_run: bool) -> bool:
                 else:
                     print("   [X] 账户查询失败 / Account Query Failed")
                     all_ok = False
-
-                trader.disconnect()
+                    trader.disconnect()
+                    trader = None
             else:
                 print("   [X] 交易接口连接失败 / Trading Interface Connection Failed")
                 print("   请检查账户ID和会话ID是否正确 / Please check if account ID and session ID are correct")
                 all_ok = False
+                trader = None
 
         except Exception as e:
             print(f"   [X] 交易接口测试失败 / Trading Interface Test Failed: {e}")
             all_ok = False
+            trader = None
 
     print("\n" + "-" * 80)
     if all_ok:
@@ -249,7 +253,7 @@ def validate_live_trading_setup(config: dict, mode: str, dry_run: bool) -> bool:
         print("  3. 检查配置文件 ~/QMT_Strategy_Data/strategy_config.json")
         print("     Check config file ~/QMT_Strategy_Data/strategy_config.json")
 
-    return all_ok
+    return all_ok, trader
 
 
 def main():
@@ -310,8 +314,14 @@ def main():
     print(f"   回调超时时间: {callback_timeout}秒")
 
     # 1.5 验证设置（仅对live模式）
+    test_trader = None  # 初始化test_trader变量
     if args.mode == 'live':
-        if not validate_live_trading_setup(config, args.mode, args.dry_run):
+        validation_passed, test_trader = validate_live_trading_setup(config, args.mode, args.dry_run)
+        if not validation_passed:
+            # 清理可能已创建的trader
+            if test_trader:
+                test_trader.disconnect()
+                test_trader = None
             if not args.dry_run:
                 # Live mode failed validation
                 print("\n实盘模式验证失败，退出程序 / Live mode validation failed, exiting")
@@ -331,13 +341,31 @@ def main():
 
     # 3. 初始化交易接口
     print("\n3. 初始化交易接口...")
-    trader = XtTrader(
-        account_id=config['xtquant_account_id'],
-        session_id=config['xtquant_session_id'],
-        xtquant_path=xtquant_path,
-        api_timeout=api_timeout,
-        max_retries=max_retries
-    )
+    if test_trader:
+        # 重用测试阶段的trader实例
+        print("   [重用] 使用已连接的交易接口实例 / Reusing existing trader instance")
+        trader = test_trader
+        # 确保配置参数一致
+        trader.api_timeout = api_timeout
+        trader.max_retries = max_retries
+        test_trader = None  # 清空引用，避免finally块中重复disconnect
+    else:
+        # 创建新的trader实例（测试模式或其他情况）
+        print("   [创建] 创建新的交易接口实例 / Creating new trader instance")
+        # 如果创建了新实例，确保有足够的延迟
+        reconnect_delay = config.get('reconnect_delay', 3.0)
+        if reconnect_delay > 0:
+            print(f"   等待 {reconnect_delay} 秒后创建新实例（避免session冲突）...")
+            import time
+            time.sleep(reconnect_delay)
+
+        trader = XtTrader(
+            account_id=config['xtquant_account_id'],
+            session_id=config['xtquant_session_id'],
+            xtquant_path=xtquant_path,
+            api_timeout=api_timeout,
+            max_retries=max_retries
+        )
 
     if args.dry_run or args.mode == 'test':
         print("   [WARNING] Test mode: No actual orders will be placed")
