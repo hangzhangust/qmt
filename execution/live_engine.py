@@ -78,9 +78,9 @@ class LiveTradingEngine:
             state = self.state_manager.load_state(self.strategy_name)
             if state:
                 self.strategy.restore_state(state)
-                print(f"✓ 策略状态已恢复: {state}")
+                print(f"[OK] 策略状态已恢复: {state}")
             else:
-                print("✗ 未找到历史状态，使用初始状态")
+                print("[INFO] 未找到历史状态，使用初始状态")
 
             # 3. 查询账户信息
             print("\n--- 账户信息 ---")
@@ -104,7 +104,7 @@ class LiveTradingEngine:
                 print("无持仓")
 
             self.is_initialized = True
-            print("\n✓ 引擎初始化完成")
+            print("\n[OK] 引擎初始化完成")
             return True
 
         except Exception as e:
@@ -178,7 +178,7 @@ class LiveTradingEngine:
             success = self.execute_rebalance(target_allocations, current_prices, current_holdings)
 
             if success:
-                print("✓ 再平衡执行成功")
+                print("[OK] 再平衡执行成功")
 
                 # 更新策略的再平衡时间
                 self.strategy.update_rebalance_time(current_date)
@@ -186,7 +186,7 @@ class LiveTradingEngine:
                 # 9. 保存状态
                 self.save_state()
             else:
-                print("✗ 再平衡执行失败")
+                print("[ERROR] 再平衡执行失败")
 
             return success
 
@@ -487,7 +487,7 @@ if __name__ == '__main__':
 
     # 初始化引擎
     if engine.initialize():
-        print("\n✓ 引擎初始化成功")
+        print("\n[OK] 引擎初始化成功")
 
         # 执行一次
         print("\n--- 执行一次策略 ---")
@@ -496,4 +496,4 @@ if __name__ == '__main__':
         # 停止引擎
         engine.stop()
     else:
-        print("\n✗ 引擎初始化失败")
+        print("\n[ERROR] 引擎初始化失败")
