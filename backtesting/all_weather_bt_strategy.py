@@ -25,6 +25,7 @@ class AllWeatherStrategy(bt.Strategy):
             'long_bonds': 0.25,
             'short_bonds': 0.25
         }),
+        ('listing_dates', {}),             # ETF上市日期 {etf_code: listing_date}
     )
 
     def __init__(self):
@@ -34,8 +35,8 @@ class AllWeatherStrategy(bt.Strategy):
         self.rebalance_counter = 0
         self.rebalance_dates = []
 
-        # 计算每个ETF的目标权重
-        self.target_weights = self._calculate_etf_weights()
+        # 计算每个ETF的目标权重（基于当前可用的ETF）
+        self.target_weights = self._calculate_etf_weights_dynamic()
 
         # 记录数据源
         self.data_names = [d._name for d in self.datas]
@@ -49,7 +50,7 @@ class AllWeatherStrategy(bt.Strategy):
 
     def _calculate_etf_weights(self) -> Dict[str, float]:
         """
-        计算每个ETF的目标权重
+        计算每个ETF的目标权重（旧版本，保留用于兼容）
 
         返回:
             dict: {etf_code: weight}
@@ -67,6 +68,81 @@ class AllWeatherStrategy(bt.Strategy):
 
         return weights
 
+    def _calculate_etf_weights_dynamic(self) -> Dict[str, float]:
+        """
+        计算当前可用ETF的目标权重（动态版本）
+
+        只为当前有数据的ETF分配权重，未上市的ETF不分配权重
+
+        返回:
+            dict: {etf_code: weight}
+        """
+        weights = {}
+
+        for category, category_config in self.params.etf_allocation.items():
+            category_weight = self.params.category_weights.get(category, 0.25)
+            etf_list = category_config['etfs']
+
+            # 只获取当前有有效数据的ETF
+            available_etfs = [etf for etf in etf_list if self._etf_has_data(etf)]
+
+            if len(available_etfs) == 0:
+                continue  # 该类别目前没有可用的ETF
+
+            # 在当前可用的ETF之间等权分配
+            etf_weight = (category_weight * self.params.position_ratio) / len(available_etfs)
+
+            for etf in available_etfs:
+                weights[etf] = etf_weight
+
+        return weights
+
+    def _etf_has_data(self, etf_code: str) -> bool:
+        """
+        检查ETF在当前时间点是否有有效数据
+
+        参数:
+            etf_code: ETF代码
+
+        返回:
+            bool: 是否有有效数据（不是NaN且大于0）
+        """
+        data = self.data_by_name.get(etf_code)
+        if data is None:
+            return False
+
+        # 检查当前收盘价是否有效
+        current_close = data.close[0]
+        return not (np.isnan(current_close) or current_close == 0)
+
+    def _check_universe_change(self) -> bool:
+        """
+        检查可用ETF集合是否发生变化（新ETF上市或旧ETF退市）
+
+        返回:
+            bool: ETF组合是否发生变化
+        """
+        current_available = set()
+        for category, category_config in self.params.etf_allocation.items():
+            for etf in category_config['etfs']:
+                if self._etf_has_data(etf):
+                    current_available.add(etf)
+
+        # 获取之前可用的ETF
+        previous_available = set(self.target_weights.keys())
+
+        # 检查是否不同
+        return current_available != previous_available
+
+    def _get_available_etf_count(self) -> int:
+        """
+        统计当前有多少个ETF有有效数据
+
+        返回:
+            int: 可用ETF数量
+        """
+        return sum(1 for etf in self.target_weights.keys() if self._etf_has_data(etf))
+
     def next(self):
         """
         每个K线调用一次
@@ -78,9 +154,17 @@ class AllWeatherStrategy(bt.Strategy):
 
         # 检查是否需要再平衡
         if self._should_rebalance(current_date):
+            # 检查ETF组合是否发生变化（新ETF上市）
+            if self._check_universe_change():
+                # 重新计算权重（基于当前可用的ETF）
+                self.target_weights = self._calculate_etf_weights_dynamic()
+                print(f"\n*** ETF组合发生变化，重新计算权重 ***")
+                print(f"当前可用ETF数量: {self._get_available_etf_count()}")
+
             print(f"\n{'='*60}")
             print(f"执行再平衡: {current_date}")
             print(f"当前总资产: {self.broker.getvalue():,.2f}")
+            print(f"可用ETF数量: {self._get_available_etf_count()}")
             print(f"{'='*60}")
 
             self._rebalance_portfolio()
@@ -115,25 +199,38 @@ class AllWeatherStrategy(bt.Strategy):
         total_value = self.broker.getvalue()
         target_value = total_value * self.params.position_ratio
 
+        # 只获取当前可用的ETF（过滤掉价格是NaN的ETF）
+        available_etfs = {etf: weight for etf, weight in self.target_weights.items()
+                          if self._etf_has_data(etf)}
+
+        if len(available_etfs) == 0:
+            print("  当前无可用ETF，跳过再平衡")
+            return
+
         print(f"\n目标投资金额: {target_value:,.2f}")
-        print(f"当前持仓:")
+        print(f"当前可用ETF: {len(available_etfs)}个")
         print(f"{'ETF代码':<15} {'当前数量':>10} {'当前价格':>10} {'当前市值':>15} {'目标数量':>10} {'调整':>10}")
         print("-" * 80)
 
-        # 对每个ETF进行再平衡
+        # 对每个可用ETF进行再平衡
         for data in self.datas:
             etf_code = data._name
 
-            # 跳过不在配置中的ETF
-            if etf_code not in self.target_weights:
+            # 跳过不在配置中的ETF或当前不可用的ETF
+            if etf_code not in available_etfs:
                 continue
 
-            target_weight = self.target_weights[etf_code]
+            target_weight = available_etfs[etf_code]
             target_value_etf = target_value * target_weight
 
             # 获取当前持仓
             current_position = self.getposition(data).size
             current_price = data.close[0]
+
+            # 跳过价格无效的ETF（NaN或0）
+            if np.isnan(current_price) or current_price == 0:
+                continue
+
             current_value = current_position * current_price
 
             # 计算目标持仓量（按手，100股一手）

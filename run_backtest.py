@@ -129,13 +129,20 @@ def main():
     # Add data feeds / 添加数据源
     print("\n4. Load Data / 加载数据...")
     use_cache = not args.no_cache
-    engine.add_data_feeds(
+
+    # 使用智能数据加载（支持NaN填充未上市的ETF）
+    listing_dates = engine.add_data_feeds_smart(
         stock_codes=etf_codes,
         start_date=args.start,
         end_date=args.end,
         period='1d',
         use_cache=use_cache
     )
+
+    # 打印ETF上市日期用于验证
+    print(f"\nETF上市日期:")
+    for etf, date in sorted(listing_dates.items(), key=lambda x: x[1]):
+        print(f"  {etf}: {date}")
 
     # Add strategy / 添加策略
     print("\n5. Add Strategy / 添加策略...")
@@ -144,7 +151,8 @@ def main():
         position_ratio=config['all_weather_position_ratio'],
         rebalance_period=config['rebalance_period'],
         etf_allocation=core_strategy.ALL_WEATHER_CONFIG,
-        category_weights=core_strategy.get_category_weights()
+        category_weights=core_strategy.get_category_weights(),
+        listing_dates=listing_dates  # 传递上市日期信息
     )
 
     # Add analyzers / 添加分析器

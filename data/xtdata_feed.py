@@ -365,6 +365,41 @@ class XtDataFeed:
             print(f"连接MiniQMT数据服务失败: {e}")
             return False
 
+    def get_earliest_date(self, stock_code: str) -> Optional[str]:
+        """
+        获取股票/ETF的最早可用日期
+
+        参数:
+            stock_code: 股票代码
+
+        返回:
+            str: 最早日期，格式YYYYMMDD，如果无法确定则返回None
+        """
+        try:
+            from datetime import datetime, timedelta
+
+            # Try to get a small sample of recent data
+            end_date = datetime.now().strftime('%Y%m%d')
+            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+
+            data = self.get_history_data(
+                stock_code=stock_code,
+                field_list=['close'],
+                start_date=start_date,
+                end_date=end_date,
+                period='1d',
+                use_cache=False
+            )
+
+            if data is not None and not data.empty:
+                # Return first date in data
+                return data.index[0].strftime('%Y%m%d')
+
+        except Exception as e:
+            print(f"无法获取 {stock_code} 的最早日期: {e}")
+
+        return None
+
     @staticmethod
     def format_date(date_str: str, input_format: str = '%Y%m%d', output_format: str = '%Y-%m-%d') -> str:
         """

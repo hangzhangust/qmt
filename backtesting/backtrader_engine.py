@@ -62,7 +62,23 @@ class XtDataPandasFeed(bt.feeds.PandasData):
         )
 
         if data is None or data.empty:
-            raise ValueError(f"无法获取数据: {stock_code} ({start_date} - {end_date})")
+            # Instead of raising ValueError, create DataFrame with NaN padding
+            print(f"警告: {stock_code} 在该时间段无数据，使用NaN填充（可能未上市）")
+
+            # Create date range for backtest period
+            start_dt = pd.to_datetime(start_date, format='%Y%m%d')
+            end_dt = pd.to_datetime(end_date, format='%Y%m%d')
+            full_index = pd.date_range(start=start_dt, end=end_dt, freq='D')
+
+            # Filter to trading days (remove weekends)
+            full_index = full_index[full_index.dayofweek < 5]
+
+            # Create DataFrame with NaN values
+            data = pd.DataFrame(
+                index=full_index,
+                columns=['open', 'high', 'low', 'close', 'volume', 'amount']
+            )
+            data[['open', 'high', 'low', 'close', 'volume', 'amount']] = np.nan
 
         # 数据预处理
         data = cls._preprocess_data(data)
@@ -175,6 +191,54 @@ class BacktestEngine:
                 print(f"添加数据源: {stock_code}")
             except Exception as e:
                 print(f"添加数据源失败 {stock_code}: {e}")
+
+    def add_data_feeds_smart(self, stock_codes: List[str], start_date: str,
+                             end_date: str, period: str = '1d',
+                             use_cache: bool = True) -> Dict[str, str]:
+        """
+        批量添加数据源，智能处理未上市的ETF，返回上市日期信息
+
+        参数:
+            stock_codes: 股票代码列表
+            start_date: 开始日期 (YYYYMMDD)
+            end_date: 结束日期 (YYYYMMDD)
+            period: 周期
+            use_cache: 是否使用缓存
+
+        返回:
+            dict: {stock_code: listing_date} for all loaded ETFs
+        """
+        listing_dates = {}
+        xt_feed = XtDataFeed(use_cache=use_cache)
+
+        for stock_code in stock_codes:
+            try:
+                # Get earliest available date
+                earliest_date = xt_feed.get_earliest_date(stock_code)
+
+                if earliest_date is None:
+                    print(f"警告: 无法确定 {stock_code} 的上市日期，跳过")
+                    continue
+
+                listing_dates[stock_code] = earliest_date
+
+                # Load data (will pad with NaN if not available for full period)
+                data_feed = XtDataPandasFeed.from_xtdata(
+                    stock_code=stock_code,
+                    start_date=start_date,
+                    end_date=end_date,
+                    period=period,
+                    use_cache=use_cache
+                )
+
+                self.cerebro.adddata(data_feed, name=stock_code)
+                self.data_feeds.append(stock_code)
+                print(f"添加数据源: {stock_code} (上市日期: {earliest_date})")
+
+            except Exception as e:
+                print(f"添加数据源失败 {stock_code}: {e}")
+
+        return listing_dates
 
     def add_strategy(self, strategy_class, **kwargs) -> None:
         """

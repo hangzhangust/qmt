@@ -23,6 +23,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;hangzhangust&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/hangzhangust/qmt.git&quot;,
+    &quot;accountId&quot;: &quot;718672b1-049e-48a5-a3c9-785254f0afa6&quot;
+  }
+}</component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 2
@@ -32,22 +44,79 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python tests.Python tests for test_visualization.test_visualization_methods.executor&quot;: &quot;Run&quot;,
+    &quot;Python tests.Python tests in setup_live_trading.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.live_engine.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python run_backtest.py --start 20150101 --end 20260116 --rebalance_period 30 --plot --save_plot backtest_2023.png.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python run_backtest.py --start 20150101 --end 20260116 --rebalance_period 30.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python run_backtest.py --start 20150601 --end 20260117 --show_metrics --rebalance_period 30.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python run_backtest.py --start 20230101 --end 20230131.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python run_backtest.py --start 20230101 --end 20231231 --position_ratio 0.3.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python run_backtest.py --start 20230101 --end 20231231.executor&quot;: &quot;Run&quot;,
+    &quot;Python.python setup_live_trading.py.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_backtest.executor&quot;: &quot;Run&quot;,
+    &quot;Python.run_live_strategy.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\zhanghang\OneDrive\Python\qmt" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.run_backtest">
+    <configuration name="live_engine" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="qmt" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/execution" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/execution/live_engine.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="python setup_live_trading.py" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="qmt" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="setup_live_trading.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="run_backtest" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="qmt" />
       <option name="ENV_FILES" value="" />
@@ -70,16 +139,57 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="run_live_strategy" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="qmt" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/run_live_strategy.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests in setup_live_trading.py" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="qmt" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/setup_live_trading.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
         <item itemvalue="Python.run_backtest" />
+        <item itemvalue="Python.run_live_strategy" />
+        <item itemvalue="Python.live_engine" />
+        <item itemvalue="Python tests.Python tests in setup_live_trading.py" />
+        <item itemvalue="Python.python setup_live_trading.py" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-164cda30dcd9-0af03a5fa574-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.26830.99" />
+        <option value="bundled-python-sdk-41e8cd69c857-64d779b69b7a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26927.90" />
       </set>
     </attachedChunks>
   </component>
@@ -92,5 +202,28 @@
       <updated>1768490010197</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/master" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>

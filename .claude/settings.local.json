@@ -8,7 +8,10 @@
       "Bash(dir:*)",
       "Bash(findstr:*)",
       "Bash(git push)",
-      "Bash(pip show:*)"
+      "Bash(pip show:*)",
+      "WebSearch",
+      "Bash(find:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
