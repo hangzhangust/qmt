@@ -32,7 +32,7 @@ class ConfigLoader:
         # 默认配置
         default_config = {
             # 全天候策略配置
-            "all_weather_position_ratio": 0.5,
+            "all_weather_position_ratio": 1.0,
             "rebalance_threshold": 0.05,
             "rebalance_period": 60,
 
