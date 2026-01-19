@@ -6,6 +6,7 @@
 import backtrader as bt
 from datetime import datetime
 from typing import Dict, List
+import numpy as np
 
 
 class AllWeatherStrategy(bt.Strategy):
