@@ -365,12 +365,15 @@ class XtDataFeed:
             print(f"连接MiniQMT数据服务失败: {e}")
             return False
 
-    def get_earliest_date(self, stock_code: str) -> Optional[str]:
+    def get_earliest_date(self, stock_code: str,
+                         start_date: str = None, end_date: str = None) -> Optional[str]:
         """
-        获取股票/ETF的最早可用日期
+        获取股票/ETF在指定时间段内的最早可用日期
 
         参数:
             stock_code: 股票代码
+            start_date: 开始日期 (YYYYMMDD)，如果为None则使用2000年1月1日
+            end_date: 结束日期 (YYYYMMDD)，如果为None则使用当前日期
 
         返回:
             str: 最早日期，格式YYYYMMDD，如果无法确定则返回None
@@ -378,22 +381,33 @@ class XtDataFeed:
         try:
             from datetime import datetime, timedelta
 
-            # Try to get a small sample of recent data
-            end_date = datetime.now().strftime('%Y%m%d')
-            start_date = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+            # 如果没有指定日期范围，使用一个很大的范围来检测上市日期
+            if start_date is None:
+                start_date = '20000101'  # 从2000年开始检查
+            if end_date is None:
+                end_date = datetime.now().strftime('%Y%m%d')
 
+            # 使用分块下载来获取长期数据
             data = self.get_history_data(
                 stock_code=stock_code,
                 field_list=['close'],
                 start_date=start_date,
                 end_date=end_date,
                 period='1d',
-                use_cache=False
+                use_cache=True  # 使用缓存以加快速度
             )
 
             if data is not None and not data.empty:
-                # Return first date in data
-                return data.index[0].strftime('%Y%m%d')
+                # 找到第一个非NaN的数据点
+                valid_data = data[data['close'].notna() & (data['close'] > 0)]
+                if not valid_data.empty:
+                    first_date = valid_data.index[0]
+                    if isinstance(first_date, str):
+                        # Already a string, just format it
+                        return first_date.replace('-', '')
+                    else:
+                        # It's a datetime object, format it
+                        return first_date.strftime('%Y%m%d')
 
         except Exception as e:
             print(f"无法获取 {stock_code} 的最早日期: {e}")

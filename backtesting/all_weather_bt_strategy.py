@@ -35,18 +35,18 @@ class AllWeatherStrategy(bt.Strategy):
         self.rebalance_counter = 0
         self.rebalance_dates = []
 
-        # 计算每个ETF的目标权重（基于当前可用的ETF）
-        self.target_weights = self._calculate_etf_weights_dynamic()
-
-        # 记录数据源
+        # 记录数据源（必须在使用datas之前完成）
         self.data_names = [d._name for d in self.datas]
         self.data_by_name = {d._name: d for d in self.datas}
+
+        # 暂时不计算权重，在next()第一次调用时计算
+        self.target_weights = {}
+        self.weights_initialized = False
 
         print(f"\n策略初始化完成")
         print(f"数据源数量: {len(self.datas)}")
         print(f"再平衡周期: {self.params.rebalance_period}天")
-        print(f"仓位比例: {self.params.position_ratio*100:.1f}%")
-        print(f"目标权重: {self.target_weights}\n")
+        print(f"仓位比例: {self.params.position_ratio*100:.1f}%\n")
 
     def _calculate_etf_weights(self) -> Dict[str, float]:
         """
@@ -148,6 +148,12 @@ class AllWeatherStrategy(bt.Strategy):
         每个K线调用一次
         这是Backtrader的主策略方法
         """
+        # 第一次调用时初始化权重
+        if not self.weights_initialized:
+            self.target_weights = self._calculate_etf_weights_dynamic()
+            self.weights_initialized = True
+            print(f"初始权重计算完成: {self.target_weights}")
+
         # 获取当前日期
         current_date = self.datas[0].datetime.date(0)
         self.rebalance_counter += 1
