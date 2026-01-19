@@ -21,50 +21,47 @@ class AllWeatherStrategy(BaseStrategy):
         'commodities': {
             'target_weight': 0.25,
             'etfs': [
-                "518880.XSHG",  # 黄金ETF
-                "162411.XSHE",  # 原油LOF
-                "159985.XSHE",  # 豆粕ETF
+                "518880.SH",  # 黄金ETF
+                # 162411（原油LOF）和159985（豆粕ETF）在XtQuant中不可用
             ],
             'names': {
-                "518880.XSHG": "黄金ETF",
-                "162411.XSHE": "原油LOF",
-                "159985.XSHE": "豆粕ETF"
+                "518880.SH": "黄金ETF"
             }
         },
         # 股票类 (25%)
         'stocks': {
             'target_weight': 0.25,
             'etfs': [
-                "159915.XSHE",  # 创业板ETF
-                "513100.XSHG",  # 纳斯达克指数ETF
-                "513520.XSHG",  # 日经ETF
+                "159915.SZ",  # 创业板ETF
+                "513100.SH",  # 纳斯达克指数ETF
+                "513520.SH",  # 日经ETF
             ],
             'names': {
-                "159915.XSHE": "创业板ETF",
-                "513100.XSHG": "纳斯达克指数ETF",
-                "513520.XSHG": "日经ETF"
+                "159915.SZ": "创业板ETF",
+                "513100.SH": "纳斯达克指数ETF",
+                "513520.SH": "日经ETF"
             }
         },
         # 长债类 (25%)
         'long_bonds': {
             'target_weight': 0.25,
             'etfs': [
-                "511260.XSHG",  # 十年国债
-                "511010.XSHG",  # 长债ETF
+                "511260.SH",  # 十年国债
+                "511010.SH",  # 长债ETF
             ],
             'names': {
-                "511260.XSHG": "十年国债",
-                "511010.XSHG": "长债ETF"
+                "511260.SH": "十年国债",
+                "511010.SH": "长债ETF"
             }
         },
         # 短债类 (25%)
         'short_bonds': {
             'target_weight': 0.25,
             'etfs': [
-                "511360.XSHG",  # 短债ETF
+                "511360.SH",  # 短债ETF
             ],
             'names': {
-                "511360.XSHG": "短债ETF"
+                "511360.SH": "短债ETF"
             }
         }
     }
