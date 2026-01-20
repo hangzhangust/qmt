@@ -15,6 +15,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from data.xtdata_feed import XtDataFeed
+from backtesting.trade_recorder import TradeRecorder
+from backtesting.position_tracker import PositionTracker
+from backtesting.trade_statistics import TradeStatistics
 
 
 class XtDataPandasFeed(bt.feeds.PandasData):
@@ -268,6 +271,22 @@ class BacktestEngine:
 
         # 交易统计
         self.cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name='trades')
+
+    def add_trade_recorder(self) -> None:
+        """
+        添加交易记录Analyzer
+
+        记录所有订单和交易对的详细信息
+        """
+        self.cerebro.addanalyzer(TradeRecorder, _name='trade_recorder')
+
+    def add_position_tracker(self) -> None:
+        """
+        添加持仓跟踪Observer
+
+        记录每日持仓状态
+        """
+        self.cerebro.addobserver(PositionTracker, _name='position_tracker')
 
     def set_cerebro_params(self, **kwargs) -> None:
         """
@@ -686,3 +705,97 @@ class BacktestEngine:
                        ha='center', va='center', fontsize=12,
                        transform=ax.transAxes)
                 ax.set_title('Asset Allocation', fontsize=12, fontweight='bold')
+
+    def export_trades_data(self, strategy: bt.Strategy, output_dir: str,
+                          timestamp: str = None) -> None:
+        """
+        导出交易数据到CSV
+
+        参数:
+            strategy: 策略实例
+            output_dir: 输出目录
+            timestamp: 时间戳（用于文件名）
+        """
+        if timestamp is None:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        # 获取recorder结果
+        if not hasattr(strategy, 'analyzers') or not hasattr(strategy.analyzers, 'trade_recorder'):
+            print("[BacktestEngine] 警告: 未找到trade_recorder，跳过交易数据导出")
+            return
+
+        recorder = strategy.analyzers.trade_recorder.get_analysis()
+        orders = recorder.get('orders', [])
+        trades = recorder.get('trades', [])
+
+        # 导出订单记录
+        if orders:
+            orders_df = pd.DataFrame(orders)
+            orders_file = f'{output_dir}/orders_{timestamp}.csv'
+            orders_df.to_csv(orders_file, index=False, encoding='utf-8-sig')
+            print(f"[BacktestEngine] 订单记录已导出: {orders_file}")
+            print(f"  - 总订单数: {len(orders)}")
+
+        # 导出交易对记录
+        if trades:
+            trades_df = pd.DataFrame(trades)
+            trades_file = f'{output_dir}/trades_{timestamp}.csv'
+            trades_df.to_csv(trades_file, index=False, encoding='utf-8-sig')
+            print(f"[BacktestEngine] 交易对记录已导出: {trades_file}")
+            print(f"  - 总交易对数: {len(trades)}")
+
+            # 计算并导出统计摘要
+            summary = TradeStatistics.calculate_summary(trades)
+            summary_df = pd.DataFrame(list(summary.items()), columns=['指标', '数值'])
+            summary_file = f'{output_dir}/trades_summary_{timestamp}.csv'
+            summary_df.to_csv(summary_file, index=False, encoding='utf-8-sig')
+            print(f"[BacktestEngine] 交易统计已导出: {summary_file}")
+        else:
+            print("[BacktestEngine] 警告: 没有已关闭的交易，跳过交易统计导出")
+
+    def export_positions_data(self, strategy: bt.Strategy, output_dir: str,
+                             timestamp: str = None) -> None:
+        """
+        导出持仓数据到CSV
+
+        参数:
+            strategy: 策略实例
+            output_dir: 输出目录
+            timestamp: 时间戳（用于文件名）
+        """
+        if timestamp is None:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        # 获取tracker结果（Observer在observers中，而不是analyzers中）
+        # Observer是strategy.observers的一个属性，可以直接通过getattr获取
+        tracker_observer = None
+        if hasattr(strategy, 'observers'):
+            # observers是一个对象，不是字典，需要通过遍历或直接属性访问
+            for obs_name in dir(strategy.observers):
+                if 'position' in obs_name.lower():
+                    tracker_observer = getattr(strategy.observers, obs_name)
+                    break
+
+        if tracker_observer is None:
+            print("[BacktestEngine] 警告: 未找到position_tracker，跳过持仓数据导出")
+            return
+
+        tracker = tracker_observer.get_analysis()
+        daily_positions = tracker.get('daily_positions', [])
+        daily_summary = tracker.get('daily_summary', [])
+
+        # 导出每日持仓详细
+        if daily_positions:
+            positions_df = pd.DataFrame(daily_positions)
+            positions_file = f'{output_dir}/positions_{timestamp}.csv'
+            positions_df.to_csv(positions_file, index=False, encoding='utf-8-sig')
+            print(f"[BacktestEngine] 每日持仓记录已导出: {positions_file}")
+            print(f"  - 总记录数: {len(daily_positions)}")
+
+        # 导出每日持仓汇总
+        if daily_summary:
+            summary_df = pd.DataFrame(daily_summary)
+            summary_file = f'{output_dir}/positions_summary_{timestamp}.csv'
+            summary_df.to_csv(summary_file, index=False, encoding='utf-8-sig')
+            print(f"[BacktestEngine] 每日持仓汇总已导出: {summary_file}")
+            print(f"  - 总天数: {len(daily_summary)}")

@@ -159,6 +159,11 @@ def main():
     print("\n6. Add Analyzers / 添加分析器...")
     engine.add_analyzers()
 
+    # Add trade recorder and position tracker / 添加交易记录器和持仓跟踪器
+    print("\n6.5. Add Trade Recorder & Position Tracker / 添加交易记录器和持仓跟踪器...")
+    engine.add_trade_recorder()
+    engine.add_position_tracker()
+
     # Run backtest / 运行回测
     print("\n7. Run Backtest / 运行回测...")
     try:
@@ -171,6 +176,18 @@ def main():
             # Print results / 打印结果
             print("\n8. Backtest Results / 回测结果:")
             engine.print_results(strategy)
+
+            # Create results directory and export data / 创建results目录并导出数据
+            print("\n8.5. Export Data / 导出数据...")
+            import datetime
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+            output_dir = f"results/backtest_{timestamp}"
+            os.makedirs(output_dir, exist_ok=True)
+            print(f"   Output directory / 输出目录: {output_dir}")
+
+            # Export trades and positions data / 导出交易和持仓数据
+            engine.export_trades_data(strategy, output_dir, timestamp)
+            engine.export_positions_data(strategy, output_dir, timestamp)
 
             # Show enhanced performance metrics / 显示增强性能指标
             if args.show_metrics:
@@ -196,7 +213,7 @@ def main():
                 engine.plot_results(strategy, save_path=args.save_plot, show=show_plot)
 
             # Save results to file / 保存结果到文件
-            save_results_to_file(strategy, args, config, enhanced_metrics if args.show_metrics else None)
+            save_results_to_file(strategy, args, config, enhanced_metrics if args.show_metrics else None, output_dir, timestamp)
 
         else:
             print("Backtest failed: No strategy instance / 回测失败：没有策略实例")
@@ -211,7 +228,7 @@ def main():
     return 0
 
 
-def save_results_to_file(strategy, args, config, enhanced_metrics=None):
+def save_results_to_file(strategy, args, config, enhanced_metrics=None, output_dir=None, timestamp=None):
     """
     Save backtest results to file
     保存回测结果到文件
@@ -221,13 +238,20 @@ def save_results_to_file(strategy, args, config, enhanced_metrics=None):
         args: Command line arguments / 命令行参数
         config: Configuration dictionary / 配置字典
         enhanced_metrics: Enhanced performance metrics (optional) / 增强性能指标（可选）
+        output_dir: Output directory path / 输出目录路径
+        timestamp: Timestamp for this backtest / 时间戳
     """
     try:
         import datetime
 
         # Generate filename / 生成文件名
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        result_file = f"backtest_result_{timestamp}.txt"
+        if timestamp is None:
+            timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        if output_dir is not None:
+            result_file = f"{output_dir}/backtest_report.txt"
+        else:
+            result_file = f"backtest_result_{timestamp}.txt"
 
         # Get results / 获取结果
         results = strategy.broker.getvalue()
@@ -262,6 +286,21 @@ def save_results_to_file(strategy, args, config, enhanced_metrics=None):
                 f.write(f"Won trades / 盈利次数: {enhanced_metrics['won_trades']}\n")
                 f.write(f"Lost trades / 亏损次数: {enhanced_metrics['lost_trades']}\n")
                 f.write(f"Win rate / 胜率: {enhanced_metrics['win_rate']*100:.2f}%\n")
+
+            # Add data files reference / 添加数据文件引用
+            if output_dir is not None:
+                f.write("\n" + "-" * 80 + "\n")
+                f.write("Data Files / 数据文件\n")
+                f.write("-" * 80 + "\n")
+                f.write("Transaction details / 交易明细:\n")
+                f.write(f"  - orders_{timestamp}.csv (订单明细)\n")
+                f.write(f"  - trades_{timestamp}.csv (交易对明细)\n")
+                f.write(f"  - trades_summary_{timestamp}.csv (交易统计)\n")
+                f.write("\n")
+                f.write("Position details / 持仓明细:\n")
+                f.write(f"  - positions_{timestamp}.csv (每日持仓详细)\n")
+                f.write(f"  - positions_summary_{timestamp}.csv (每日持仓汇总)\n")
+                f.write(f"\nAll files saved to: {output_dir}\n")
 
             f.write("\n" + "=" * 80 + "\n")
 
