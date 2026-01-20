@@ -326,6 +326,14 @@ class OrderManager:
         """
         orders = []
 
+        # FIX: Filter current_holdings to only include stocks in target_allocations
+        # Stocks not in target list are ignored (not considered in rebalancing)
+        filtered_holdings = {
+            stock_code: holding
+            for stock_code, holding in current_holdings.items()
+            if stock_code in target_allocations
+        }
+
         for stock_code, target_value in target_allocations.items():
             # 获取当前价格
             current_price = current_prices.get(stock_code, 0)
@@ -336,9 +344,9 @@ class OrderManager:
             # 计算目标持仓量
             target_volume = self.calculate_target_volume(target_value, current_price)
 
-            # 获取当前持仓
-            if stock_code in current_holdings:
-                current_volume = current_holdings[stock_code].get('volume', 0)
+            # 获取当前持仓 (from filtered holdings)
+            if stock_code in filtered_holdings:
+                current_volume = filtered_holdings[stock_code].get('volume', 0)
             else:
                 current_volume = 0
 

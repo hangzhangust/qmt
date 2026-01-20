@@ -291,26 +291,48 @@ class LiveTradingEngine:
 
         try:
             # 使用miniQMT数据接口获取最新价格
+            # FIX: Use 'none' for dividend_type because ETFs don't support dividend adjustment
             tick_data = self.data_feed.get_market_data(
                 field_list=['close'],
                 stock_list=stock_codes,
                 period='1d',
                 count=1,
-                dividend_type='follow'
+                dividend_type='none'  # ETFs don't support dividend adjustment
             )
 
-            for stock_code in stock_codes:
-                if stock_code in tick_data:
-                    df = tick_data[stock_code]
-                    if not df.empty:
-                        prices[stock_code] = df['close'].iloc[-1]
-                    else:
-                        prices[stock_code] = 0
-                else:
+            # FIX: Add null check for tick_data
+            if tick_data is None:
+                print(f"[LiveEngine] 获取市场数据失败: 返回None")
+                for stock_code in stock_codes:
                     prices[stock_code] = 0
+                return prices
+
+            for stock_code in stock_codes:
+                # FIX: Check if stock_code exists in tick_data
+                if stock_code not in tick_data:
+                    print(f"[LiveEngine] 警告: 未获取到 {stock_code} 的数据")
+                    prices[stock_code] = 0
+                    continue
+
+                df = tick_data[stock_code]
+
+                # FIX: Check if DataFrame is empty before accessing
+                if df is None or df.empty:
+                    prices[stock_code] = 0
+                    print(f"[LiveEngine] 警告: {stock_code} 数据为空")
+                    continue
+
+                prices[stock_code] = df['close'].iloc[-1]
 
         except Exception as e:
             print(f"[LiveEngine] 获取价格失败: {e}")
+            import traceback
+            traceback.print_exc()
+
+            # Initialize all prices to 0 on error
+            for stock_code in stock_codes:
+                if stock_code not in prices:
+                    prices[stock_code] = 0
 
         return prices
 
