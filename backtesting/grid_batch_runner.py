@@ -92,11 +92,26 @@ class GridBatchRunner:
                 printlog=False,  # 关闭详细日志
             )
 
-            # 添加分析器
-            cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='sharpe')
-            cerebro.addanalyzer(bt.analyzers.DrawDown, _name='drawdown')
-            cerebro.addanalyzer(bt.analyzers.Returns, _name='returns')
-            cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name='trades')
+            # 添加分析器（添加错误处理）
+            try:
+                cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='sharpe')
+            except:
+                pass  # 如果数据不足，跳过Sharpe分析器
+
+            try:
+                cerebro.addanalyzer(bt.analyzers.DrawDown, _name='drawdown')
+            except:
+                pass  # 如果数据不足，跳过DrawDown分析器
+
+            try:
+                cerebro.addanalyzer(bt.analyzers.Returns, _name='returns')
+            except:
+                pass  # 如果数据不足，跳过Returns分析器
+
+            try:
+                cerebro.addanalyzer(bt.analyzers.TradeAnalyzer, _name='trades')
+            except:
+                pass  # 如果数据不足，跳过Trade分析器
 
             # 运行回测
             print(f"Starting backtest...")
@@ -234,25 +249,30 @@ class GridBatchRunner:
         # 1. 导出汇总指标
         summary_data = []
         for etf_code, result in individual_results.items():
-            if 'error' not in result:
+            if 'error' not in result and 'total_return' in result:
                 summary_data.append({
                     'ETF_Code': result['etf_code'],
                     'ETF_Name': result['etf_name'],
-                    'Total_Return_%': result['total_return'],
-                    'Final_Value': result['final_value'],
+                    'Total_Return_%': result.get('total_return', 0),
+                    'Final_Value': result.get('final_value', 0),
                     'Total_PnL': result.get('total_pnl', 0),
-                    'Total_Grid_Triggers': result['total_grid_triggers'],
-                    'Buy_Triggers': result['buy_grid_triggers'],
-                    'Sell_Triggers': result['sell_grid_triggers'],
-                    'Trigger_Freq_Per_Month': result['grid_trigger_frequency'],
+                    'Total_Grid_Triggers': result.get('total_grid_triggers', 0),
+                    'Buy_Triggers': result.get('buy_grid_triggers', 0),
+                    'Sell_Triggers': result.get('sell_grid_triggers', 0),
+                    'Trigger_Freq_Per_Month': result.get('grid_trigger_frequency', 0),
                 })
 
-        summary_df = pd.DataFrame(summary_data)
-        summary_df = summary_df.sort_values('Total_Return_%', ascending=False)
+        if summary_data:
+            summary_df = pd.DataFrame(summary_data)
+            # 安全地排序
+            if 'Total_Return_%' in summary_df.columns:
+                summary_df = summary_df.sort_values('Total_Return_%', ascending=False)
 
-        summary_path = os.path.join(output_dir, 'summary.csv')
-        summary_df.to_csv(summary_path, index=False, encoding='utf-8-sig')
-        print(f"  - Summary: {summary_path}")
+            summary_path = os.path.join(output_dir, 'summary.csv')
+            summary_df.to_csv(summary_path, index=False, encoding='utf-8-sig')
+            print(f"  - Summary: {summary_path}")
+        else:
+            print("  - No valid results to export in summary")
 
         # 2. 导出每个策略的网格触发历史
         for etf_code, result in individual_results.items():

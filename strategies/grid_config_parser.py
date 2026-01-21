@@ -96,6 +96,17 @@ class GridConfigParser:
 
         etf_code = etf_code_match.group(1)
 
+        # 添加市场后缀（ETF代码通常是6位数字）
+        # 需要根据实际情况判断是上海(.SH)还是深圳(.SZ)
+        # 这里暂时根据代码首位判断：5=上海，1/3=深圳
+        if etf_code.startswith('5'):
+            etf_code = f"{etf_code}.SH"
+        elif etf_code.startswith('1') or etf_code.startswith('3'):
+            etf_code = f"{etf_code}.SZ"
+        else:
+            # 默认为上海
+            etf_code = f"{etf_code}.SH"
+
         # ETF 名称
         etf_name = str(row.iloc[5]) if len(row) > 5 else ''
         etf_name = etf_name.strip()
