@@ -7,6 +7,12 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 import os
 
+# 导入API路由
+from api import backtest
+
+# 导入数据库模型
+from models.database import init_db
+
 # 创建FastAPI应用实例
 app = FastAPI(
     title="QMT量化交易系统",
@@ -23,11 +29,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 导入路由（后续实现）
-# from api import backtest, monitor, optimization
-# app.include_router(backtest.router, prefix="/api/backtest", tags=["回测"])
+# 注册路由
+app.include_router(backtest.router, prefix="/api/backtest", tags=["回测"])
 # app.include_router(monitor.router, prefix="/api/monitor", tags=["监控"])
 # app.include_router(optimization.router, prefix="/api/optimization", tags=["优化"])
+
+
+# 应用启动事件
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时初始化数据库"""
+    print("初始化数据库...")
+    init_db()
+    print("数据库初始化完成")
+
 
 # 健康检查接口
 @app.get("/")
