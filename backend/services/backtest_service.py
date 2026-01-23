@@ -201,9 +201,39 @@ class BacktestService:
         config: Dict[str, Any],
         progress_callback=None
     ) -> Dict[str, Any]:
-        """运行全天候策略回测（待实现）"""
-        # TODO: 实现全天候策略回测
-        raise NotImplementedError("全天候策略回测功能待实现")
+        """运行全天候策略回测"""
+        # 导入全天候回测引擎
+        from backtesting.all_weather_batch_runner import AllWeatherBatchRunner
+
+        # 辅助函数：处理async回调
+        def call_callback(progress, message):
+            if progress_callback:
+                try:
+                    progress_callback(progress, message)
+                except TypeError:
+                    try:
+                        loop = asyncio.get_running_loop()
+                        asyncio.create_task(progress_callback(progress, message))
+                    except RuntimeError:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(progress_callback(progress, message))
+                        loop.close()
+
+        # 报告进度
+        call_callback(30, "初始化全天候策略回测...")
+
+        # 创建全天候回测运行器
+        aw_runner = AllWeatherBatchRunner(initial_cash=runner.initial_cash)
+
+        call_callback(40, "加载ETF数据...")
+
+        # 运行回测
+        result = aw_runner.run_backtest(config)
+
+        call_callback(90, "生成分析报告...")
+
+        return result
 
     @staticmethod
     def validate_grid_config(config: Dict[str, Any]) -> tuple[bool, str]:
@@ -247,6 +277,68 @@ class BacktestService:
             return False, "卖出数量必须大于0"
 
         return True, ""
+
+    @staticmethod
+    def validate_all_weather_config(config: Dict[str, Any]) -> tuple[bool, str]:
+        """
+        验证全天候策略配置
+
+        Args:
+            config: 策略配置字典
+
+        Returns:
+            (is_valid, error_message)
+        """
+        try:
+            # 验证仓位比例
+            position_ratio = config.get('position_ratio', 0.5)
+            if not isinstance(position_ratio, (int, float)):
+                return False, "仓位比例必须是数字"
+            if not 0 < position_ratio <= 1:
+                return False, "仓位比例必须在0-1之间"
+
+            # 验证再平衡周期
+            rebalance_period = config.get('rebalance_period', 60)
+            if not isinstance(rebalance_period, int):
+                return False, "再平衡周期必须是整数"
+            if not 1 <= rebalance_period <= 365:
+                return False, "再平衡周期必须在1-365天之间"
+
+            # 验证再平衡阈值
+            rebalance_threshold = config.get('rebalance_threshold', 0.05)
+            if not isinstance(rebalance_threshold, (int, float)):
+                return False, "再平衡阈值必须是数字"
+            if not 0 < rebalance_threshold <= 0.5:
+                return False, "再平衡阈值必须在0-50%之间"
+
+            # 验证自定义资产配置（如果提供）
+            if 'custom_allocation' in config and config['custom_allocation'] is not None:
+                custom_alloc = config['custom_allocation']
+                if not isinstance(custom_alloc, dict):
+                    return False, "自定义资产配置必须是字典类型"
+
+                required_categories = ['commodities', 'stocks', 'long_bonds', 'short_bonds']
+                for category in required_categories:
+                    if category not in custom_alloc:
+                        return False, f"缺少资产类别: {category}"
+
+                    if not isinstance(custom_alloc[category], dict):
+                        return False, f"{category} 配置必须是字典"
+
+                    if 'etfs' not in custom_alloc[category]:
+                        return False, f"{category} 缺少etfs字段"
+
+                    if not isinstance(custom_alloc[category]['etfs'], list):
+                        return False, f"{category}.etfs 必须是列表"
+
+                    if len(custom_alloc[category]['etfs']) == 0:
+                        return False, f"{category} 至少需要一个ETF"
+
+            return True, ""
+
+        except Exception as e:
+            return False, f"配置验证异常: {str(e)}"
+
 
 
 if __name__ == "__main__":

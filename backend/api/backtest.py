@@ -71,9 +71,13 @@ async def run_backtest(request: RunBacktestRequest):
         # 生成任务ID
         task_id = BacktestService.generate_task_id()
 
-        # 验证网格策略配置
+        # 验证策略配置
         if request.strategy_type == 'grid':
             is_valid, error_msg = BacktestService.validate_grid_config(request.strategy_config)
+            if not is_valid:
+                raise HTTPException(status_code=400, detail=f"配置验证失败: {error_msg}")
+        elif request.strategy_type == 'all_weather':
+            is_valid, error_msg = BacktestService.validate_all_weather_config(request.strategy_config)
             if not is_valid:
                 raise HTTPException(status_code=400, detail=f"配置验证失败: {error_msg}")
 
