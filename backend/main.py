@@ -82,7 +82,7 @@ if __name__ == "__main__":
     print("=" * 60)
 
     uvicorn.run(
-        app,
+        "main:app",  # 使用字符串格式导入应用以支持reload
         host="127.0.0.1",
         port=8000,
         reload=True,  # 开发模式自动重载
