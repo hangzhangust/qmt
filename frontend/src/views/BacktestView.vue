@@ -13,7 +13,7 @@
             <el-form-item label="策略类型">
               <el-select v-model="strategyType" style="width: 100%">
                 <el-option label="网格交易策略" value="grid" />
-                <el-option label="全天候策略" value="all_weather" disabled />
+                <el-option label="全天候策略" value="all_weather" />
               </el-select>
             </el-form-item>
           </el-form>
@@ -24,6 +24,15 @@
             <GridConfigForm
               ref="gridConfigFormRef"
               v-model="gridConfig"
+            />
+          </div>
+
+          <!-- 全天候策略配置 -->
+          <div v-if="strategyType === 'all_weather'">
+            <h4 style="margin-bottom: 15px">全天候策略参数</h4>
+            <AllWeatherConfigForm
+              ref="allWeatherConfigFormRef"
+              v-model="allWeatherConfig"
             />
           </div>
 
@@ -212,6 +221,7 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import GridConfigForm from '@/components/GridConfigForm.vue'
+import AllWeatherConfigForm from '@/components/AllWeatherConfigForm.vue'
 import { api } from '@/api/client'
 
 // 策略类型
@@ -228,6 +238,14 @@ const gridConfig = ref({
   sell_amount: 80000,
   buy_amount_type: 'shares',
   sell_amount_type: 'shares',
+})
+
+// 全天候策略配置
+const allWeatherConfig = ref({
+  position_ratio: 0.5,
+  rebalance_period: 60,
+  rebalance_threshold: 0.05,
+  custom_allocation: null
 })
 
 // 回测配置
@@ -249,6 +267,7 @@ watch([startDate, endDate], () => {
 
 // 表单引用
 const gridConfigFormRef = ref(null)
+const allWeatherConfigFormRef = ref(null)
 const backtestFormRef = ref(null)
 
 // 回测规则
@@ -274,9 +293,16 @@ let ws = null
 // 启动回测
 const startBacktest = async () => {
   try {
-    // 验证表单
-    await gridConfigFormRef.value?.validateForm()
+    // 验证回测参数表单
     await backtestFormRef.value?.validate()
+
+    // 根据策略类型验证相应的配置表单
+    if (strategyType.value === 'grid') {
+      await gridConfigFormRef.value?.validateForm()
+    } else if (strategyType.value === 'all_weather') {
+      // 全天候策略暂无需要验证的表单字段
+      // 如果需要可以添加验证逻辑
+    }
 
     // 清空之前的结果
     backtestResult.value = null
@@ -284,10 +310,18 @@ const startBacktest = async () => {
     progress.value = 0
     progressMessage.value = '正在启动回测...'
 
+    // 根据策略类型获取配置
+    let strategyConfig
+    if (strategyType.value === 'grid') {
+      strategyConfig = gridConfig.value
+    } else if (strategyType.value === 'all_weather') {
+      strategyConfig = allWeatherConfig.value
+    }
+
     // 调用API启动回测
     const response = await api.backtest.run({
       strategy_type: strategyType.value,
-      strategy_config: gridConfig.value,
+      strategy_config: strategyConfig,
       backtest_config: backtestConfig,
     })
 
