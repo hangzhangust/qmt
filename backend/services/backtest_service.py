@@ -149,9 +149,27 @@ class BacktestService:
         progress_callback=None
     ) -> Dict[str, Any]:
         """运行网格策略回测"""
+        # 辅助函数：处理async回调
+        def call_callback(progress, message):
+            if progress_callback:
+                try:
+                    # 尝试直接调用（同步回调）
+                    progress_callback(progress, message)
+                except TypeError:
+                    # 如果是coroutine，需要在事件循环中运行
+                    try:
+                        loop = asyncio.get_running_loop()
+                        # 如果已经在事件循环中，创建任务
+                        asyncio.create_task(progress_callback(progress, message))
+                    except RuntimeError:
+                        # 没有运行的事件循环，创建一个新的
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.run_until_complete(progress_callback(progress, message))
+                        loop.close()
+
         # 报告进度
-        if progress_callback:
-            asyncio.create_task(progress_callback(30, "加载市场数据..."))
+        call_callback(30, "加载市场数据...")
 
         # 构建完整的策略配置
         full_config = {
@@ -167,15 +185,13 @@ class BacktestService:
         }
 
         # 报告进度
-        if progress_callback:
-            asyncio.create_task(progress_callback(50, "执行回测策略..."))
+        call_callback(50, "执行回测策略...")
 
         # 运行回测
         result = runner.run_single_backtest(full_config)
 
         # 报告进度
-        if progress_callback:
-            asyncio.create_task(progress_callback(90, "生成分析报告..."))
+        call_callback(90, "生成分析报告...")
 
         return result
 
