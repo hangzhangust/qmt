@@ -158,9 +158,23 @@ class GridBatchRunner:
             return result
 
         except Exception as e:
-            print(f"ERROR: Backtest failed for {etf_code}: {e}")
             import traceback
-            traceback.print_exc()
+            error_details = traceback.format_exc()
+
+            print(f"\n{'='*60}")
+            print(f"回测失败详情")
+            print(f"{'='*60}")
+            print(f"- ETF代码: {etf_code}")
+            print(f"- ETF名称: {config.get('etf_name', 'Unknown')}")
+            print(f"- 回测期间: {config.get('start_date')} 至 {config.get('end_date')}")
+            print(f"- 错误类型: {type(e).__name__}")
+            print(f"- 错误信息: {str(e)}")
+            print(f"\n排查建议:")
+            print(f"1. 检查 {etf_code} 是否在回测期间已上市")
+            print(f"2. 尝试清除数据缓存：删除 data_cache/ 目录下的缓存文件")
+            print(f"3. 检查QMT连接状态和服务是否运行")
+            print(f"4. 运行诊断脚本：python diagnose_513130.py {etf_code}")
+            print(f"{'='*60}\n")
 
             # 返回错误结果
             return {
@@ -170,6 +184,7 @@ class GridBatchRunner:
                 'final_value': self.initial_cash,
                 'total_return': 0.0,
                 'grid_triggers': [],
+                'traceback': error_details,
             }
 
     def run_batch_backtest(

@@ -65,8 +65,25 @@ class XtDataPandasFeed(bt.feeds.PandasData):
         )
 
         if data is None or data.empty:
-            # Instead of raising ValueError, create DataFrame with NaN padding
-            print(f"警告: {stock_code} 在该时间段无数据，使用NaN填充（可能未上市）")
+            # 获取ETF上市日期并提供详细提示
+            listing_date = xt_feed.get_earliest_date(stock_code)
+
+            if listing_date:
+                print(f"\n{'='*60}")
+                print(f"警告: {stock_code} 数据为空")
+                print(f"{'='*60}")
+                print(f"  - 上市日期: {listing_date}")
+                print(f"  - 回测开始日期: {start_date}")
+                print(f"  - 回测结束日期: {end_date}")
+
+                # 检查上市日期是否在回测期间
+                start_dt = pd.to_datetime(start_date, format='%Y%m%d')
+                listing_dt = pd.to_datetime(listing_date, format='%Y%m%d')
+
+                if listing_dt > start_dt:
+                    print(f"\n  [建议] 回测开始日期早于上市日期！")
+                    print(f"  请将回测开始日期调整为 {listing_date} 或之后")
+                print(f"{'='*60}\n")
 
             # Create date range for backtest period
             start_dt = pd.to_datetime(start_date, format='%Y%m%d')
@@ -113,8 +130,19 @@ class XtDataPandasFeed(bt.feeds.PandasData):
             if col not in data.columns:
                 raise ValueError(f"缺少必需的列: {col}")
 
-        # 去除NaN值
-        data = data.dropna(subset=required_columns)
+        # 检查是否有任何有效价格数据
+        valid_price_count = data['close'].notna().sum()
+        if valid_price_count == 0:
+            print(f"警告: 数据源完全没有有效价格数据，将返回全NaN")
+            return data
+
+        # 改进的NaN处理：只移除所有必需列都为NaN的行
+        # 这样可以保留部分列有值的行
+        data = data.dropna(how='all', subset=required_columns)
+
+        # 前向填充缺失值（对于未上市期间的NaN保持不变）
+        # 只对已有数据的部分进行填充
+        data = data.fillna(method='ffill')
 
         # 排序
         data = data.sort_index()
