@@ -8,7 +8,7 @@ import uvicorn
 import os
 
 # 导入API路由
-from api import backtest
+from api import backtest, market_data
 
 # 导入数据库模型
 from models.database import init_db
@@ -31,6 +31,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(backtest.router, prefix="/api/backtest", tags=["回测"])
+app.include_router(market_data.router, prefix="/api/market", tags=["市场数据"])
 # app.include_router(monitor.router, prefix="/api/monitor", tags=["监控"])
 # app.include_router(optimization.router, prefix="/api/optimization", tags=["优化"])
 

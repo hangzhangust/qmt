@@ -42,6 +42,12 @@ export const api = {
     listTasks: () => apiClient.get('/api/backtest/tasks')
   },
 
+  // 市场数据相关
+  market: {
+    getCurrentPrice: (etfCode) => apiClient.get(`/api/market/current-price/${etfCode}`),
+    getBatchPrices: (etfCodes) => apiClient.post('/api/market/batch-prices', etfCodes)
+  },
+
   // 优化相关
   optimization: {
     run: (config) => apiClient.post('/api/optimization/run', config),

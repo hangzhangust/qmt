@@ -174,16 +174,13 @@ const fetchCurrentPrice = async () => {
 
   loadingPrice.value = true
   try {
-    // TODO: 调用API获取当前价格
-    // const price = await api.getCurrentPrice(formData.etf_code)
-    // formData.base_price = price
-
-    // 暂时使用模拟数据
-    await new Promise(resolve => setTimeout(resolve, 500))
-    formData.base_price = 1.573
-    ElMessage.success('获取当前价格成功')
+    // 调用API获取当前价格
+    const response = await api.market.getCurrentPrice(formData.etf_code)
+    formData.base_price = response.price
+    ElMessage.success(`获取当前价格成功: ${response.price}`)
   } catch (error) {
-    ElMessage.error('获取当前价格失败')
+    console.error('获取当前价格失败:', error)
+    ElMessage.error(`获取当前价格失败: ${error.response?.data?.detail || error.message}`)
   } finally {
     loadingPrice.value = false
   }
