@@ -382,11 +382,16 @@ class LiveTradingEngine:
             sell_orders = [o for o in orders if o['action'] == 'sell']
             buy_orders = [o for o in orders if o['action'] == 'buy']
 
+            filled_count = 0
+            total_count = len(orders)
+
             # 1. 先执行卖出订单
             if sell_orders:
                 print("\n执行卖出订单...")
                 for order in sell_orders:
-                    self._execute_single_order(order, 'market')
+                    result = self._execute_single_order(order, 'market')
+                    if result and result.get('success') and result.get('status') == 'filled':
+                        filled_count += 1
 
             # 2. 再执行买入订单
             if buy_orders:
@@ -409,8 +414,16 @@ class LiveTradingEngine:
 
                     # 执行买入
                     result = self._execute_single_order(order, 'market')
-                    if result and result.get('success'):
+                    if result and result.get('success') and result.get('status') == 'filled':
+                        filled_count += 1
                         available_cash -= required_cash
+
+            print(f"\n订单执行完成: {filled_count}/{total_count} 笔成交")
+
+            # 只有在至少有一笔订单成交时才认为再平衡成功
+            if filled_count == 0:
+                print("[WARNING] 没有任何订单成交，不更新持仓状态")
+                return False
 
             return True
 
